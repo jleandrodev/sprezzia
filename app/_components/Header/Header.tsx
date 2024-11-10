@@ -15,7 +15,7 @@ export default function Header() {
               className="mb-8"
             />
           </Link>
-          <nav>
+          <nav className="hidden md:flex">
             <ul className="flex space-x-4">
               <li>
                 <Link
