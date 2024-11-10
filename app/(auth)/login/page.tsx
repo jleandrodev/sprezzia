@@ -4,7 +4,6 @@ import { LogInIcon } from "lucide-react";
 import { SignInButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { dark } from "@clerk/themes";
 
 export default async function Page() {
   const { userId } = await auth();
@@ -29,7 +28,7 @@ export default async function Page() {
           convidados e manter cada detalhe sob controle. Faça login e planeje
           momentos inesquecíveis com estilo e facilidade.
         </p>
-        <SignInButton mode="modal">
+        <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
           <Button variant="outline">
             <LogInIcon className="mr-2" />
             Fazer login ou criar conta
