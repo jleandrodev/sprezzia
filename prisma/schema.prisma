@@ -52,3 +52,61 @@ enum TransactionPaymentMethod {
   PIX
   OTHER
 }
+
+model Project {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  events      Event[]
+}
+
+model Event {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  date        DateTime
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id])
+  guestList   GuestList?
+}
+
+model GuestList {
+  id         String           @id @default(uuid())
+  eventId    String           @unique
+  event      Event            @relation(fields: [eventId], references: [id])
+  guestLists GuestListGuest[]
+}
+
+model Guest {
+  id         String           @id @default(uuid())
+  name       String
+  phone      String?
+  guestLists GuestListGuest[]
+  companions Companion[]
+}
+
+model GuestListGuest {
+  id          String    @id @default(uuid())
+  guestListId String
+  guestId     String
+  guest       Guest     @relation(fields: [guestId], references: [id])
+  guestList   GuestList @relation(fields: [guestListId], references: [id])
+  companions  Int
+
+  @@unique([guestListId, guestId])
+}
+
+model Companion {
+  id      String        @id @default(uuid())
+  name    String
+  type    CompanionType
+  guestId String
+  guest   Guest         @relation(fields: [guestId], references: [id])
+}
+
+enum CompanionType {
+  INFANT // Criança de 0-5 anos
+  CHILD // Criança de 6-10 anos
+  TEENAGER // Maior que 11 anos
+  ADULT // Adulto
+}

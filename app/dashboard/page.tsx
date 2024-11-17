@@ -8,9 +8,8 @@ export default async function Page() {
     redirect("/login");
   }
   return (
-    <div className="flex flex-col min-h-[100vh] items-center justify-center">
+    <div>
       <h1>Dashboard</h1>
-      <UserButton showName />
     </div>
   );
 }
