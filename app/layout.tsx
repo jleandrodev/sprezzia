@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { dark } from "@clerk/themes";
+import { ThemeProvider } from "./_components/theme/theme-provider";
 
 export const metadata = {
   title: "Gestão inteligente de eventos | Sprezzia",
@@ -12,11 +13,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider
-      appearance={{ baseTheme: dark, signIn: { baseTheme: dark } }}
-    >
+    <ClerkProvider appearance={{ baseTheme: dark }}>
       <html lang="en">
-        <body className="dark antialiased">{children}</body>
+        <body className="antialiased">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </body>
       </html>
     </ClerkProvider>
   );

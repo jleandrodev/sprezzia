@@ -13,21 +13,18 @@ export default async function Home() {
         className="absolute inset-0 object-cover w-full h-full"
         priority
       />
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        aria-hidden="true"
-      ></div>
+      <div className="absolute inset-0 bg-opacity-50" aria-hidden="true"></div>
 
       <Header />
 
       <div className="flex-grow flex items-center justify-center">
         <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground mb-6">
             Transforme sua gestão de eventos
           </h1>
           <Link
             href="/login"
-            className="inline-block bg-[#55B02E] text-white px-8 py-3 text-lg font-semibold rounded-md hover:text-[#55B02E] hover:bg-primary/90 transition-colors"
+            className="inline-block bg-[#55B02E] text-foreground px-8 py-3 text-lg font-semibold rounded-md hover:text-[#55B02E] hover:bg-primary/90 transition-colors"
           >
             Login Now
           </Link>

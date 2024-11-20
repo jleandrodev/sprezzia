@@ -10,9 +10,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main>
+      <main className="grid grid-cols-[32px,1fr]">
         <SidebarTrigger />
-        {children}
+        <div className="py-8 flex flex-col w-full h-full overflow-auto">
+          {children}
+        </div>
       </main>
     </SidebarProvider>
   );

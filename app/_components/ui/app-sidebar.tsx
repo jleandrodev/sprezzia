@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Logo from "@/app/assets/logo.svg";
 
 import {
   Calendar,
@@ -22,6 +22,9 @@ import {
   SidebarMenuItem,
 } from "@/app/_components/ui/sidebar";
 import { UserButton } from "@clerk/nextjs";
+import { ThemeToggle } from "../theme/ThemeToggle";
+import { usePathname } from "next/navigation";
+import { cn } from "@/app/_lib/utils";
 
 // Menu items.
 const items = [
@@ -32,54 +35,57 @@ const items = [
   },
   {
     title: "Projetos",
-    url: "/projects",
+    url: "/dashboard/projects",
     icon: Folder,
   },
   {
     title: "Calendar",
-    url: "#",
+    url: "/dashboard/calendar",
     icon: Calendar,
   },
   {
-    title: "Search",
-    url: "#",
-    icon: Search,
-  },
-  {
     title: "Settings",
-    url: "#",
+    url: "/dashboard/settings",
     icon: Settings,
   },
 ];
 
 export function AppSidebar() {
+  const pathName = usePathname();
   return (
     <Sidebar>
       <SidebarHeader className="w-full p-5 border-b border-muted">
         <SidebarGroup>
-          <Image src="/logo.svg" width={120} height={100} alt="Sprezzia Logo" />
+          <Logo className="w-[160px]" />
         </SidebarGroup>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = pathName == item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn(isActive && "bg-accent")}
+                    >
+                      <a href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="flex flex-row justify-between">
         <UserButton showName />
+        <ThemeToggle />
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Logo from "@/app/assets/logo.svg";
 
 export default function Header() {
   return (
@@ -7,13 +7,7 @@ export default function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center py-2">
-            <Image
-              src="/logo.svg"
-              width={173}
-              height={39}
-              alt="Finance AI"
-              className="mb-8"
-            />
+            <Logo />
           </Link>
           <nav className="hidden md:flex">
             <ul className="flex space-x-4">
