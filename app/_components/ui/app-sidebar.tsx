@@ -12,17 +12,13 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/app/_components/ui/sidebar";
-import { UserButton } from "@clerk/nextjs";
-import { ThemeToggle } from "../theme/ThemeToggle";
 import { usePathname } from "next/navigation";
 import { cn } from "@/app/_lib/utils";
 
@@ -83,10 +79,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="flex flex-row justify-between">
-        <UserButton showName />
-        <ThemeToggle />
-      </SidebarFooter>
     </Sidebar>
   );
 }
