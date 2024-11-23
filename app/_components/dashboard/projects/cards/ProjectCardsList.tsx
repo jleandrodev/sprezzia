@@ -1,10 +1,13 @@
+import AddProjectDialog from "@/app/_components/dialog/AddProjectDialog";
 import AddProjectCard from "./AddProjectCard";
 import ProjectCard from "./ProjectCard";
 
 export default function ProjectCardsList() {
   return (
     <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 ">
-      <AddProjectCard />
+      <AddProjectDialog>
+        <AddProjectCard />
+      </AddProjectDialog>
       <ProjectCard
         image="/casal-1.jpg"
         title="Casamento J&L"

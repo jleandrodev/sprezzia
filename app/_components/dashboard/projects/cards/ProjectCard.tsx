@@ -15,7 +15,7 @@ export default function ProjectCard({
   image,
 }: ProjectCardProps) {
   return (
-    <button
+    <div
       className={cn(
         "w-full h-[250px] bg-muted/50 rounded border border-muted-foreground",
         "flex items-center justify-center relative outline-none overflow-hidden",
@@ -31,6 +31,6 @@ export default function ProjectCard({
           {description}
         </span>
       </div>
-    </button>
+    </div>
   );
 }
