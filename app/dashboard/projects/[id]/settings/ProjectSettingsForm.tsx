@@ -100,7 +100,11 @@ export default function ProjectSettingsForm({ project }: { project: any }) {
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Erro ao atualizar projeto");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao atualizar projeto");
+      }
 
       toast({
         title: "🎉 Projeto atualizado com sucesso!",
@@ -111,10 +115,12 @@ export default function ProjectSettingsForm({ project }: { project: any }) {
       });
 
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "❌ Erro",
-        description: "Não foi possível atualizar as informações do evento.",
+        description:
+          error.message ||
+          "Não foi possível atualizar as informações do evento.",
         variant: "destructive",
         duration: 3000,
       });

@@ -28,7 +28,6 @@ export async function PATCH(
       const bytes = await image.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Criar nome único para o arquivo
       const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
       const filename = `${uniqueSuffix}-${image.name}`;
       const path = join(process.cwd(), "public/uploads", filename);
@@ -43,8 +42,15 @@ export async function PATCH(
       date: date ? new Date(date) : null,
       type,
       budget: budget ? parseFloat(budget) : undefined,
-      image: imageUrl,
+      image: imageUrl || undefined,
     });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Projeto não encontrado" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(project);
   } catch (error) {

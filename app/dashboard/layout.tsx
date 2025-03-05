@@ -5,6 +5,7 @@ import * as React from "react";
 import { SidebarProvider } from "../_components/ui/sidebar";
 import { AppSidebar } from "../_components/ui/app-sidebar";
 import DashboardHeader from "../_components/dashboard/DashboardHeader";
+import { Toaster } from "@/app/_components/ui/toaster";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+      <Toaster />
     </SidebarProvider>
   );
 }
