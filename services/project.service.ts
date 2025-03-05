@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { formatCurrency } from "@/app/_lib/utils";
 
 interface Project {
   id: string;
@@ -7,6 +8,7 @@ interface Project {
   description: string | null;
   status: string;
   date: Date | null;
+  type: string | null;
   budget: number | null;
   createdAt: Date;
   updatedAt: Date;
@@ -18,18 +20,26 @@ export class ProjectService {
   static async create(data: {
     name: string;
     description?: string;
-    date?: Date;
-    budget?: number;
+    date?: Date | null;
+    type?: string;
     userId: string;
     workspaceId: string;
   }) {
     return prisma.project.create({
-      data,
+      data: {
+        name: data.name,
+        description: data.description,
+        date: data.date,
+        type: data.type,
+        userId: data.userId,
+        workspaceId: data.workspaceId,
+        status: "active",
+      },
     });
   }
 
   static async findMany(workspaceId: string) {
-    return prisma.project.findMany({
+    const projects = await prisma.project.findMany({
       where: {
         workspaceId,
       },
@@ -37,12 +47,30 @@ export class ProjectService {
         createdAt: Prisma.SortOrder.desc,
       },
     });
+
+    return projects.map((project) => ({
+      ...project,
+      budget: project.budget ? Number(project.budget) : null,
+      formattedBudget: project.budget
+        ? formatCurrency(Number(project.budget))
+        : "R$ 0,00",
+    }));
   }
 
   static async findById(id: string) {
-    return prisma.project.findUnique({
+    const project = await prisma.project.findUnique({
       where: { id },
     });
+
+    if (!project) return null;
+
+    return {
+      ...project,
+      budget: project.budget ? Number(project.budget) : null,
+      formattedBudget: project.budget
+        ? formatCurrency(Number(project.budget))
+        : "R$ 0,00",
+    };
   }
 
   static async update(
@@ -51,8 +79,10 @@ export class ProjectService {
       name?: string;
       description?: string;
       status?: string;
-      date?: Date;
+      date?: Date | null;
+      type?: string;
       budget?: number;
+      image?: string | null;
     }
   ) {
     return prisma.project.update({

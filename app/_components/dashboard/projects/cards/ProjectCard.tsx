@@ -1,6 +1,7 @@
 import { cn } from "@/app/_lib/utils";
 import { ReactNode } from "react";
 import Link from "next/link";
+import { formatCurrency } from "@/app/_lib/utils";
 
 export interface ProjectCardProps {
   id: string;
@@ -8,6 +9,7 @@ export interface ProjectCardProps {
   description: string;
   icon?: ReactNode;
   image?: string;
+  budget?: number | null;
 }
 
 export default function ProjectCard({
@@ -16,6 +18,7 @@ export default function ProjectCard({
   description,
   icon,
   image,
+  budget,
 }: ProjectCardProps) {
   return (
     <Link href={`/dashboard/projects/${id}`}>
@@ -34,6 +37,11 @@ export default function ProjectCard({
           <span className="block text-xs text-muted-foreground">
             {description}
           </span>
+          {budget && (
+            <span className="block text-xs font-medium text-primary mt-1">
+              {formatCurrency(budget)}
+            </span>
+          )}
         </div>
       </div>
     </Link>

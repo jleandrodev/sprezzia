@@ -72,13 +72,16 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
         },
         body: JSON.stringify({
           name: values.name,
-          description: values.description,
+          description: values.description || "",
+          date: values.date,
+          type: values.type,
           workspaceId: "default",
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao criar projeto");
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao criar projeto");
       }
 
       toast({
@@ -89,9 +92,13 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
       form.reset();
       onSuccess?.();
     } catch (error) {
+      console.error(error);
       toast({
         title: "Erro",
-        description: "Não foi possível criar o projeto.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível criar o projeto.",
         variant: "destructive",
       });
     } finally {
