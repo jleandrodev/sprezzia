@@ -13,12 +13,12 @@ import { FileText, Users, Settings } from "lucide-react";
 import { ProjectService } from "@/services/project.service";
 import Link from "next/link";
 import { Button } from "@/app/_components/ui/button";
+import { formatCurrency } from "@/app/_lib/utils";
+import { notFound } from "next/navigation";
 
 async function getProject(id: string) {
   const project = await ProjectService.findById(id);
-  if (!project) {
-    throw new Error("Projeto não encontrado");
-  }
+  if (!project) notFound();
   return project;
 }
 
@@ -32,17 +32,11 @@ export default async function ProjectDetailsPage({
   const eventDate = project.date ? new Date(project.date) : null;
   const daysUntilEvent = eventDate ? differenceInDays(eventDate, today) : null;
 
-  const projectData = {
-    name: project.name,
-    date: new Date("2024-12-25"), // Ainda mockado até implementarmos a data no modelo
-    budget: {
-      total: 50000,
-      used: 35000,
-    },
-  };
-
-  const budgetPercentage =
-    (projectData.budget.used / projectData.budget.total) * 100;
+  // Valor fixo de 70% para o progresso do orçamento
+  const budgetProgress = 70;
+  const usedBudget = project.budget
+    ? (project.budget * budgetProgress) / 100
+    : 0;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -98,17 +92,33 @@ export default async function ProjectDetailsPage({
               Orçamento
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Progress value={budgetPercentage} className="h-2" />
-            <div className="flex justify-between text-sm">
-              <span>
-                Utilizado: R$ {projectData.budget.used.toLocaleString()}
-              </span>
-              <span>Total: R$ {projectData.budget.total.toLocaleString()}</span>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex flex-col">
+                <p className="text-3xl font-bold text-primary">
+                  {formatCurrency(project.budget || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">Orçamento Total</p>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Utilizado</span>
+                  <span className="font-medium">
+                    {formatCurrency(usedBudget)}
+                  </span>
+                </div>
+
+                <Progress value={budgetProgress} className="h-2" />
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Disponível</span>
+                  <span className="font-medium text-primary">
+                    {formatCurrency((project.budget || 0) - usedBudget)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="text-xl font-bold text-center">
-              {budgetPercentage.toFixed(1)}% utilizado
-            </p>
           </CardContent>
         </Card>
 
@@ -145,7 +155,7 @@ export default async function ProjectDetailsPage({
           <CardContent>
             <Calendar
               mode="single"
-              selected={projectData.date}
+              selected={project.date}
               className="rounded-md border"
             />
           </CardContent>

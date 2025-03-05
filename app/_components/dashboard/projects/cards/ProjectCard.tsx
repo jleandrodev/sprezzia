@@ -1,6 +1,7 @@
 import { cn } from "@/app/_lib/utils";
 import { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { formatCurrency } from "@/app/_lib/utils";
 
 export interface ProjectCardProps {
@@ -22,25 +23,29 @@ export default function ProjectCard({
 }: ProjectCardProps) {
   return (
     <Link href={`/dashboard/projects/${id}`}>
-      <div
-        className={cn(
-          "w-full h-[250px] bg-muted/50 rounded border border-muted-foreground",
-          "flex items-center justify-center relative outline-none overflow-hidden",
-          "hover:brightness-105 dark:hover:brightness-125 transition-all",
-          "bg-cover bg-center cursor-pointer"
-        )}
-        style={image ? { backgroundImage: `url(${image})` } : undefined}
-      >
-        {icon}
-        <div className="absolute w-full left-0 bottom-0 p-3 bg-gradient-to-t from-background">
-          <p className="text-sm font-semibold">{title}</p>
-          <span className="block text-xs text-muted-foreground">
-            {description}
-          </span>
+      <div className="flex flex-col rounded-lg border bg-card overflow-hidden hover:shadow-md transition-shadow">
+        <div className="relative w-full h-[200px]">
+          {image ? (
+            <Image
+              src={image}
+              alt={title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              {icon}
+            </div>
+          )}
+        </div>
+        <div className="p-4 bg-gray-50 dark:bg-gray-900">
+          <h3 className="font-semibold text-lg mb-1">{title}</h3>
+          <p className="text-sm text-muted-foreground mb-2">{description}</p>
           {budget && (
-            <span className="block text-xs font-medium text-primary mt-1">
+            <p className="text-sm font-medium text-primary">
               {formatCurrency(budget)}
-            </span>
+            </p>
           )}
         </div>
       </div>
