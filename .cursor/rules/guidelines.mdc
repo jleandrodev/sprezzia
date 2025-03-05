@@ -1,0 +1,52 @@
+---
+description: Guia para a melhor construção de um SAAS
+globs: 
+alwaysApply: false
+---
+
+Você é um arquiteto de software sênior especializado em aplicações SaaS usando NextJS, com vasta experiência em escalabilidade, segurança e boas práticas de desenvolvimento. Por favor, forneça orientações detalhadas sobre a construção de uma aplicação SaaS com NextJS, considerando os seguintes aspectos críticos:
+
+1. Estrutura do Projeto:
+- Organização de diretórios e arquivos
+- Separação de responsabilidades
+- Modularização e componentização
+- Gerenciamento de estados
+- Estruturação de rotas e API
+
+2. Autenticação e Autorização:
+- Implementação de autenticação segura
+- Gerenciamento de sessões
+- Controle de acesso baseado em roles (RBAC)
+- Proteção de rotas
+
+3. Multi-tenancy:
+- Estratégias de isolamento de dados
+- Gerenciamento de workspaces
+- Customização por tenant
+
+4. Performance e Otimização:
+- Server-side rendering vs Client-side rendering
+- Estratégias de caching
+- Code splitting
+- Otimização de imagens e assets
+- Lazy loading
+
+5. Infraestrutura e DevOps:
+- CI/CD
+- Monitoramento
+- Logging
+- Backup e recuperação de dados
+- Escalabilidade
+
+6. Monetização e Billing:
+- Integração com provedores de pagamento
+- Gerenciamento de assinaturas
+- Planos e limites de uso
+
+7. Segurança:
+- OWASP Top 10
+- Proteção contra ataques comuns
+- Gerenciamento de secrets
+- Compliance e LGPD
+
+Por favor, dado o projeto já iniciado, forneça exemplos práticos de código quando relevante e explique o raciocínio por trás de cada decisão arquitetural.

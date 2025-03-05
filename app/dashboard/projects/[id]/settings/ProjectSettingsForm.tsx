@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/app/_lib/utils";
 import { Button } from "@/app/_components/ui/button";
-import { Calendar } from "@/app/_components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -19,83 +14,73 @@ import {
   FormMessage,
 } from "@/app/_components/ui/form";
 import { Input } from "@/app/_components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/app/_components/ui/select";
+import { Calendar } from "@/app/_components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/app/_components/ui/popover";
+import { cn } from "@/app/_lib/utils";
 import { useToast } from "@/app/_hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { ptBR } from "date-fns/locale";
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: "O nome do projeto deve ter pelo menos 2 caracteres.",
+    message: "O nome deve ter pelo menos 2 caracteres.",
   }),
   description: z.string().optional(),
   date: z.date({
     required_error: "A data do evento é obrigatória.",
   }),
-  type: z.enum(["Casamento", "Chá", "Aniversário", "Bodas", "Corporativo"], {
-    required_error: "Por favor selecione um tipo de evento.",
+  budget: z.string().regex(/^\d+(\.\d{1,2})?$/, {
+    message: "Digite um valor válido (ex: 1000.00)",
   }),
 });
 
-interface CreateEventFormProps {
-  onSuccess?: () => void;
-}
-
-export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
+export default function ProjectSettingsForm({ project }: { project: any }) {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: project.name,
+      description: project.description || "",
+      date: project.date ? new Date(project.date) : undefined,
+      budget: project.budget?.toString() || "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      setIsLoading(true);
-      const response = await fetch("/api/projects", {
-        method: "POST",
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: values.name,
-          description: values.description,
-          workspaceId: "default",
+          ...values,
+          budget: parseFloat(values.budget),
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Erro ao criar projeto");
-      }
+      if (!response.ok) throw new Error("Erro ao atualizar projeto");
 
       toast({
         title: "Sucesso!",
-        description: "Projeto criado com sucesso.",
+        description: "Informações do evento atualizadas com sucesso.",
       });
 
-      form.reset();
-      onSuccess?.();
+      router.refresh();
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Não foi possível criar o projeto.",
+        description: "Não foi possível atualizar as informações do evento.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -107,13 +92,10 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome do Projeto</FormLabel>
+              <FormLabel>Nome do Evento</FormLabel>
               <FormControl>
-                <Input placeholder="Digite o nome do projeto" {...field} />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                Este é o nome que será usado para identificar o seu projeto.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -126,11 +108,8 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
             <FormItem>
               <FormLabel>Descrição</FormLabel>
               <FormControl>
-                <Input placeholder="Digite a descrição do projeto" {...field} />
+                <Input {...field} />
               </FormControl>
-              <FormDescription>
-                Adicione uma descrição para o seu projeto.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -153,7 +132,7 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, "PPP", { locale: ptBR })
                       ) : (
                         <span>Escolha uma data</span>
                       )}
@@ -166,16 +145,10 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={(date) =>
-                      date < new Date() || date < new Date("1900-01-01")
-                    }
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
-              <FormDescription>
-                A data em que o evento ocorrerá.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -183,35 +156,27 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
 
         <FormField
           control={form.control}
-          name="type"
+          name="budget"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tipo do Evento</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo do evento" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Casamento">Casamento</SelectItem>
-                  <SelectItem value="Chá">Chá</SelectItem>
-                  <SelectItem value="Aniversário">Aniversário</SelectItem>
-                  <SelectItem value="Bodas">Bodas</SelectItem>
-                  <SelectItem value="Corporativo">Corporativo</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Orçamento Total</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                />
+              </FormControl>
               <FormDescription>
-                Escolha o tipo de evento que você está planejando.
+                Digite o valor total do orçamento previsto para o evento
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Criando..." : "Criar Projeto"}
-        </Button>
+        <Button type="submit">Salvar Alterações</Button>
       </form>
     </Form>
   );

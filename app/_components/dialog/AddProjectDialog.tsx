@@ -9,20 +9,19 @@ import {
 import { ReactNode } from "react";
 import CreateEventForm from "../dashboard/projects/forms/CreateEventForm";
 
-export interface AddProjectDialogProps {
-  open?: boolean;
-  setOpen?: (open: boolean) => void;
-  children: ReactNode;
+interface AddProjectDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
 export default function AddProjectDialog({
   open,
-  setOpen,
-  children,
+  onOpenChange,
+  onSuccess,
 }: AddProjectDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {children && <DialogTrigger>{children}</DialogTrigger>}
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-2xl">Adicionar novo projeto</DialogTitle>
@@ -30,7 +29,7 @@ export default function AddProjectDialog({
             Preencha os campos abaixo para criar um novo projeto.
           </DialogDescription>
         </DialogHeader>
-        <CreateEventForm />
+        <CreateEventForm onSuccess={onSuccess} />
       </DialogContent>
     </Dialog>
   );

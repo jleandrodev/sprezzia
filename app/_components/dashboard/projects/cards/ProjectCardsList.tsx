@@ -1,28 +1,80 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import AddProjectDialog from "@/app/_components/dialog/AddProjectDialog";
 import AddProjectCard from "./AddProjectCard";
 import ProjectCard from "./ProjectCard";
+import { useToast } from "@/app/_hooks/use-toast";
+import Link from "next/link";
+
+interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  workspaceId: string;
+  image?: string;
+}
 
 export default function ProjectCardsList() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/projects?workspaceId=default");
+      if (!response.ok) throw new Error("Erro ao carregar projetos");
+      const data = await response.json();
+      setProjects(data);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os projetos.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
+
   return (
-    <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 ">
-      <AddProjectDialog>
-        <AddProjectCard />
-      </AddProjectDialog>
-      <ProjectCard
-        image="/casal-1.jpg"
-        title="Casamento J&L"
-        description="Casamento Chacara Vida"
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AddProjectCard onClick={() => setIsDialogOpen(true)} />
+
+        {projects.map((project) => (
+          <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
+            <ProjectCard
+              id={project.id}
+              image={project.image || "/placeholder.svg"}
+              title={project.name}
+              description={project.description || ""}
+            />
+          </Link>
+        ))}
+      </div>
+
+      <AddProjectDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSuccess={() => {
+          fetchProjects();
+          setIsDialogOpen(false);
+        }}
       />
-      <ProjectCard
-        image="/casal-2.jpg"
-        title="Casamento G&L"
-        description="Casamento Eden Garden"
-      />
-      <ProjectCard
-        image="/casal-1.jpg"
-        title="Casamento R&R"
-        description="Casamento Vale Azul"
-      />
-    </section>
+    </>
   );
 }

@@ -54,9 +54,16 @@ enum TransactionPaymentMethod {
 }
 
 model Project {
-  id          String  @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
+  status      String    @default("active")
+  date        DateTime?
+  budget      Decimal?  @db.Decimal(10, 2)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  workspaceId String
   events      Event[]
 }
 
