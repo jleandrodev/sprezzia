@@ -124,21 +124,23 @@ export default async function ProjectDetailsPage({
         </Card>
 
         {/* Documentos */}
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span role="img" aria-label="documents">
-                📄
-              </span>
-              Documentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Acesse os contratos e documentos do seu evento
-            </p>
-          </CardContent>
-        </Card>
+        <Link href={`/dashboard/projects/${params.id}/docs`}>
+          <Card className="cursor-pointer hover:bg-accent/50 transition-colors h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span role="img" aria-label="documents">
+                  📄
+                </span>
+                Documentos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Acesse os contratos e documentos do seu evento
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Conteúdo Inferior */}

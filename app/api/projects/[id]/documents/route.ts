@@ -1,0 +1,108 @@
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const documents = await prisma.document.findMany({
+      where: {
+        projectId: params.id,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json({ documents });
+  } catch (error) {
+    console.error("Erro ao buscar documentos:", error);
+    return NextResponse.json(
+      { error: "Erro ao buscar documentos" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+
+    if (!file || !name) {
+      return NextResponse.json(
+        { error: "Arquivo e nome são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    // TODO: Implementar upload do arquivo para um serviço de storage (S3, etc)
+    // Por enquanto, vamos apenas simular o upload
+    const url = "https://exemplo.com/arquivo.pdf";
+
+    const document = await prisma.document.create({
+      data: {
+        name,
+        description,
+        type: file.type,
+        size: file.size,
+        url,
+        projectId: params.id,
+      },
+    });
+
+    return NextResponse.json(document);
+  } catch (error) {
+    console.error("Erro ao criar documento:", error);
+    return NextResponse.json(
+      { error: "Erro ao criar documento" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string; documentId: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    // TODO: Implementar remoção do arquivo do storage
+
+    await prisma.document.delete({
+      where: {
+        id: params.documentId,
+        projectId: params.id,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao excluir documento:", error);
+    return NextResponse.json(
+      { error: "Erro ao excluir documento" },
+      { status: 500 }
+    );
+  }
+}

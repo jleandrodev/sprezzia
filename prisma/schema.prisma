@@ -30,6 +30,7 @@ model Project {
   userId      String
   workspaceId String
   guests      Guest[]
+  documents   Document[]
 
   @@index([userId])
   @@index([workspaceId])
@@ -61,4 +62,19 @@ model Companion {
   updatedAt DateTime    @updatedAt
 
   @@index([guestId])
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String    // Tipo do arquivo (pdf, doc, image)
+  size        Int       // Tamanho em bytes
+  url         String    // URL do arquivo no storage
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
 }
