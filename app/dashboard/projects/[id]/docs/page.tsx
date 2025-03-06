@@ -1,29 +1,32 @@
-import { ProjectService } from "@/services/project.service";
-import { notFound } from "next/navigation";
-import DocumentList from "@/app/_components/dashboard/documents/DocumentList";
+"use client";
 
-async function getProject(id: string) {
-  const project = await ProjectService.findById(id);
-  if (!project) notFound();
-  return project;
+import { useEffect } from "react";
+import { usePageTitle } from "@/app/_contexts/PageTitleContext";
+import { ProjectService } from "@/services/project.service";
+import { DocumentList } from "@/app/_components/dashboard/documents/DocumentList";
+
+interface DocsPageProps {
+  params: {
+    id: string;
+  };
 }
 
-export default async function ProjectDocumentsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const project = await getProject(params.id);
+export default function DocsPage({ params }: DocsPageProps) {
+  const { setTitle } = usePageTitle();
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      const project = await ProjectService.findById(params.id);
+      if (project) {
+        setTitle(project.name);
+      }
+    };
+
+    fetchProject();
+  }, [params.id, setTitle]);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-3xl font-bold">Documentos</h1>
-        <p className="text-muted-foreground">
-          Gerencie os documentos do projeto {project.name}
-        </p>
-      </div>
-
+    <div className="container mx-auto py-6">
       <DocumentList projectId={params.id} />
     </div>
   );

@@ -23,6 +23,7 @@ import EditGuestDialog from "./EditGuestDialog";
 import DeleteGuestDialog from "./DeleteGuestDialog";
 import ImportGuestsDialog from "./ImportGuestsDialog";
 import AddGuestDialog from "./AddGuestDialog";
+import { useProject } from "@/app/_contexts/ProjectContext";
 
 interface Companion {
   id: string;
@@ -47,6 +48,7 @@ interface GuestListProps {
 export function GuestList({ projectId }: GuestListProps) {
   const [guests, setGuests] = useState<Guest[]>([]);
   const { toast } = useToast();
+  const { projectName } = useProject();
 
   const fetchGuests = async () => {
     try {
@@ -130,7 +132,10 @@ export function GuestList({ projectId }: GuestListProps) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-3xl font-bold">Lista de Convidados</h1>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Lista de Convidados</h1>
+          <p className="text-muted-foreground">{projectName}</p>
+        </div>
         <div className="flex items-center gap-2">
           <AddGuestDialog projectId={projectId} onSuccess={fetchGuests} />
           <ImportGuestsDialog projectId={projectId} onSuccess={fetchGuests} />
