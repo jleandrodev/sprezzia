@@ -15,6 +15,7 @@ import Link from "next/link";
 import { Button } from "@/app/_components/ui/button";
 import { formatCurrency } from "@/app/_lib/utils";
 import { notFound } from "next/navigation";
+import GuestListPreview from "@/app/_components/dashboard/guests/GuestListPreview";
 
 async function getProject(id: string) {
   const project = await ProjectService.findById(id);
@@ -162,7 +163,7 @@ export default async function ProjectDetailsPage({
         </Card>
 
         {/* Lista de Convidados */}
-        <Card className="col-span-12 md:col-span-8 cursor-pointer hover:bg-accent/50 transition-colors">
+        <Card className="col-span-12 md:col-span-8">
           <Link href={`/dashboard/projects/${params.id}/guests`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -173,59 +174,7 @@ export default async function ProjectDetailsPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border overflow-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="p-2 text-left">Nome</th>
-                      <th className="p-2 text-left">Acompanhantes</th>
-                      <th className="p-2 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      {
-                        name: "João Silva",
-                        companions: 2,
-                        status: "confirmed",
-                      },
-                      {
-                        name: "Maria Santos",
-                        companions: 1,
-                        status: "pending",
-                      },
-                      {
-                        name: "Pedro Oliveira",
-                        companions: 3,
-                        status: "declined",
-                      },
-                    ].map((guest, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="p-2">{guest.name}</td>
-                        <td className="p-2">{guest.companions}</td>
-                        <td className="p-2">
-                          <Badge
-                            variant="secondary"
-                            className={
-                              guest.status === "confirmed"
-                                ? "bg-green-100 text-green-800"
-                                : guest.status === "pending"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {guest.status === "confirmed"
-                              ? "Confirmado Presença"
-                              : guest.status === "pending"
-                                ? "Pendente"
-                                : "Confirmado Ausência"}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <GuestListPreview projectId={params.id} />
             </CardContent>
           </Link>
         </Card>
