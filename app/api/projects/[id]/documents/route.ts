@@ -43,32 +43,27 @@ export async function POST(
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
 
-    if (!file || !name) {
+    if (!file) {
       return NextResponse.json(
-        { error: "Arquivo e nome são obrigatórios" },
+        { error: "Nenhum arquivo enviado" },
         { status: 400 }
       );
     }
 
-    // TODO: Implementar upload do arquivo para um serviço de storage (S3, etc)
-    // Por enquanto, vamos apenas simular o upload
-    const url = "https://exemplo.com/arquivo.pdf";
-
+    // Aqui você implementaria a lógica de upload do arquivo
+    // Por enquanto, vamos apenas simular salvando os metadados
     const document = await prisma.document.create({
       data: {
-        name,
-        description,
+        name: file.name,
         type: file.type,
         size: file.size,
-        url,
+        url: "https://exemplo.com/arquivo.pdf", // URL temporária
         projectId: params.id,
       },
     });
 
-    return NextResponse.json(document);
+    return NextResponse.json({ document });
   } catch (error) {
     console.error("Erro ao criar documento:", error);
     return NextResponse.json(
@@ -80,20 +75,22 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; documentId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
+    const url = new URL(request.url);
+    const documentId = url.pathname.split("/").pop();
 
-    // TODO: Implementar remoção do arquivo do storage
+    if (!documentId) {
+      return NextResponse.json(
+        { error: "ID do documento não fornecido" },
+        { status: 400 }
+      );
+    }
 
     await prisma.document.delete({
       where: {
-        id: params.documentId,
-        projectId: params.id,
+        id: documentId,
       },
     });
 
