@@ -24,6 +24,8 @@ import DeleteGuestDialog from "./DeleteGuestDialog";
 import ImportGuestsDialog from "./ImportGuestsDialog";
 import AddGuestDialog from "./AddGuestDialog";
 import { useProject } from "@/app/_contexts/ProjectContext";
+import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 
 interface Companion {
   id: string;
@@ -252,6 +254,15 @@ export function GuestList({ projectId }: GuestListProps) {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex justify-end mt-6">
+        <Link href={`/dashboard/projects/${projectId}/whatsapp`}>
+          <Button className="flex items-center gap-2" variant="secondary">
+            <MessageSquare className="h-4 w-4" />
+            Disparar Mensagens WhatsApp
+          </Button>
+        </Link>
       </div>
     </div>
   );
