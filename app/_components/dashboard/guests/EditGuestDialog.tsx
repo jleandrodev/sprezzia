@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/_components/ui/select";
-import { Plus, Trash } from "lucide-react";
+import { Edit, Plus, Trash } from "lucide-react";
 import { useToast } from "@/app/_hooks/use-toast";
 
 const formSchema = z.object({
@@ -53,31 +53,43 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const defaultValues: Partial<FormValues> = {
-  name: "",
-  phone: "",
-  status: "PENDENTE",
-  companions: [],
-  children_0_6: 0,
-  children_7_10: 0,
-};
-
-interface AddGuestDialogProps {
+interface EditGuestDialogProps {
   projectId: string;
+  guest: {
+    id: string;
+    name: string;
+    phone: string | null;
+    status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
+    companions: Array<{
+      id: string;
+      name: string;
+      status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
+    }>;
+    children_0_6: number;
+    children_7_10: number;
+  };
   onSuccess?: () => void;
 }
 
-export default function AddGuestDialog({
+export default function EditGuestDialog({
   projectId,
+  guest,
   onSuccess,
-}: AddGuestDialogProps) {
+}: EditGuestDialogProps) {
   const [step, setStep] = useState(1);
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: {
+      name: guest.name,
+      phone: guest.phone || "",
+      status: guest.status,
+      companions: guest.companions,
+      children_0_6: guest.children_0_6,
+      children_7_10: guest.children_7_10,
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -88,27 +100,26 @@ export default function AddGuestDialog({
   async function onSubmit(values: FormValues) {
     try {
       const response = await fetch(`/api/projects/${projectId}/guests`, {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, guestId: guest.id }),
       });
 
-      if (!response.ok) throw new Error("Erro ao adicionar convidado");
+      if (!response.ok) throw new Error("Erro ao atualizar convidado");
 
       toast({
         title: "Sucesso",
-        description: "Convidado adicionado com sucesso!",
+        description: "Convidado atualizado com sucesso!",
       });
 
       setOpen(false);
-      form.reset();
       onSuccess?.();
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o convidado.",
+        description: "Não foi possível atualizar o convidado.",
         variant: "destructive",
       });
     }
@@ -136,22 +147,35 @@ export default function AddGuestDialog({
     }
   };
 
+  useEffect(() => {
+    if (open) {
+      setStep(1);
+      form.reset({
+        name: guest.name,
+        phone: guest.phone || "",
+        status: guest.status,
+        companions: guest.companions,
+        children_0_6: guest.children_0_6,
+        children_7_10: guest.children_7_10,
+      });
+    }
+  }, [open, guest, form]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Adicionar Convidado
+        <Button variant="ghost" size="icon">
+          <Edit className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {step === 1
-              ? "Dados do Convidado"
+              ? "Editar Dados do Convidado"
               : step === 2
-                ? "Acompanhantes"
-                : "Informações Adicionais"}
+                ? "Editar Acompanhantes"
+                : "Editar Informações Adicionais"}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -386,7 +410,7 @@ export default function AddGuestDialog({
                 </Button>
               )}
               <Button type="submit">
-                {step < 3 ? "Próximo" : "Finalizar"}
+                {step < 3 ? "Próximo" : "Salvar Alterações"}
               </Button>
             </div>
           </form>

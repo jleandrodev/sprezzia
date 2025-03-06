@@ -16,6 +16,9 @@ export async function GET(
       where: {
         projectId: params.id,
       },
+      include: {
+        companions: true,
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -51,12 +54,21 @@ export async function POST(
       );
     }
 
-    // Criar o convidado apenas com nome e telefone
+    // Criar o convidado com todos os campos
     const guest = await prisma.guest.create({
       data: {
         name: body.name,
         phone: body.phone || null,
+        status: body.status,
+        children_0_6: body.children_0_6 || 0,
+        children_7_10: body.children_7_10 || 0,
         projectId: params.id,
+        companions: {
+          create: body.companions || [],
+        },
+      },
+      include: {
+        companions: true,
       },
     });
 
@@ -65,6 +77,100 @@ export async function POST(
     console.error("Erro ao criar convidado:", error);
     return NextResponse.json(
       { error: "Erro ao criar convidado" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { guestId } = body;
+
+    if (!guestId) {
+      return NextResponse.json(
+        { error: "ID do convidado é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    // Primeiro, excluir todos os acompanhantes existentes
+    await prisma.companion.deleteMany({
+      where: {
+        guestId: guestId,
+      },
+    });
+
+    // Atualizar o convidado e criar novos acompanhantes
+    const updatedGuest = await prisma.guest.update({
+      where: {
+        id: guestId,
+      },
+      data: {
+        name: body.name,
+        phone: body.phone || null,
+        status: body.status,
+        children_0_6: body.children_0_6 || 0,
+        children_7_10: body.children_7_10 || 0,
+        companions: {
+          create: body.companions || [],
+        },
+      },
+      include: {
+        companions: true,
+      },
+    });
+
+    return NextResponse.json(updatedGuest);
+  } catch (error) {
+    console.error("Erro ao atualizar convidado:", error);
+    return NextResponse.json(
+      { error: "Erro ao atualizar convidado" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { guestId } = body;
+
+    if (!guestId) {
+      return NextResponse.json(
+        { error: "ID do convidado é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    // Excluir o convidado (os acompanhantes serão excluídos automaticamente devido ao onDelete: Cascade)
+    await prisma.guest.delete({
+      where: {
+        id: guestId,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao excluir convidado:", error);
+    return NextResponse.json(
+      { error: "Erro ao excluir convidado" },
       { status: 500 }
     );
   }
