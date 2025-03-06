@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/app/_components/ui/card";
 import { Button } from "@/app/_components/ui/button";
 import { useToast } from "@/app/_hooks/use-toast";
@@ -53,7 +53,7 @@ export default function DocumentList({ projectId }: DocumentListProps) {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       const response = await fetch(`/api/projects/${projectId}/documents`);
       if (!response.ok) throw new Error("Erro ao buscar documentos");
@@ -66,11 +66,11 @@ export default function DocumentList({ projectId }: DocumentListProps) {
         variant: "destructive",
       });
     }
-  };
+  }, [projectId, toast]);
 
   useEffect(() => {
     fetchDocuments();
-  }, [projectId]);
+  }, [fetchDocuments]);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>

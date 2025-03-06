@@ -62,7 +62,7 @@ export default function GuestListPreview({ projectId }: GuestListPreviewProps) {
 
   useEffect(() => {
     fetchGuests();
-  }, [projectId]);
+  }, [projectId, fetchGuests]);
 
   const getStatusStyle = (status: Guest["status"]) => {
     switch (status) {

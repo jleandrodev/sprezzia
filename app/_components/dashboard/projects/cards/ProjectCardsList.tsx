@@ -44,7 +44,7 @@ export default function ProjectCardsList() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   if (isLoading) {
     return <div>Carregando...</div>;

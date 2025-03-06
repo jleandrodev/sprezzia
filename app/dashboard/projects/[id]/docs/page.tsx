@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { usePageTitle } from "@/app/_contexts/PageTitleContext";
 import { ProjectService } from "@/services/project.service";
 import DocumentList from "@/app/_components/dashboard/documents/DocumentList";
-import { notFound } from "next/navigation";
 
 interface DocsPageProps {
   params: {
@@ -12,20 +11,18 @@ interface DocsPageProps {
   };
 }
 
-async function getProject(id: string) {
-  const project = await ProjectService.findById(id);
-  if (!project) notFound();
-  return project;
-}
-
-export default async function DocsPage({ params }: DocsPageProps) {
+export default function DocsPage({ params }: DocsPageProps) {
   const { setTitle } = usePageTitle();
 
   useEffect(() => {
     const fetchProject = async () => {
-      const project = await getProject(params.id);
-      if (project) {
-        setTitle(project.name);
+      try {
+        const project = await ProjectService.findById(params.id);
+        if (project) {
+          setTitle(project.name);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar projeto:", error);
       }
     };
 

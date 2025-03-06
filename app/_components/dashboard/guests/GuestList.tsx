@@ -69,7 +69,7 @@ export function GuestList({ projectId }: GuestListProps) {
 
   useEffect(() => {
     fetchGuests();
-  }, [projectId]);
+  }, [projectId, fetchGuests]);
 
   const getStatusStyle = (status: Guest["status"]) => {
     switch (status) {
