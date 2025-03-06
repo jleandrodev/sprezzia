@@ -155,69 +155,79 @@ export default async function ProjectDetailsPage({
           <CardContent>
             <Calendar
               mode="single"
-              selected={project.date}
+              selected={project.date ?? new Date()}
               className="rounded-md border"
             />
           </CardContent>
         </Card>
 
         {/* Lista de Convidados */}
-        <Card className="col-span-12 md:col-span-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span role="img" aria-label="guests">
-                👥
-              </span>
-              Lista de Convidados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="p-2 text-left">Nome</th>
-                    <th className="p-2 text-left">Acompanhantes</th>
-                    <th className="p-2 text-left">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { name: "João Silva", companions: 2, status: "confirmed" },
-                    { name: "Maria Santos", companions: 1, status: "pending" },
-                    {
-                      name: "Pedro Oliveira",
-                      companions: 3,
-                      status: "declined",
-                    },
-                  ].map((guest, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="p-2">{guest.name}</td>
-                      <td className="p-2">{guest.companions}</td>
-                      <td className="p-2">
-                        <Badge
-                          variant="secondary"
-                          className={
-                            guest.status === "confirmed"
-                              ? "bg-green-100 text-green-800"
-                              : guest.status === "pending"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-red-100 text-red-800"
-                          }
-                        >
-                          {guest.status === "confirmed"
-                            ? "Confirmado Presença"
-                            : guest.status === "pending"
-                              ? "Pendente"
-                              : "Confirmado Ausência"}
-                        </Badge>
-                      </td>
+        <Card className="col-span-12 md:col-span-8 cursor-pointer hover:bg-accent/50 transition-colors">
+          <Link href={`/dashboard/projects/${params.id}/guests`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span role="img" aria-label="guests">
+                  👥
+                </span>
+                Lista de Convidados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border overflow-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="p-2 text-left">Nome</th>
+                      <th className="p-2 text-left">Acompanhantes</th>
+                      <th className="p-2 text-left">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
+                  </thead>
+                  <tbody>
+                    {[
+                      {
+                        name: "João Silva",
+                        companions: 2,
+                        status: "confirmed",
+                      },
+                      {
+                        name: "Maria Santos",
+                        companions: 1,
+                        status: "pending",
+                      },
+                      {
+                        name: "Pedro Oliveira",
+                        companions: 3,
+                        status: "declined",
+                      },
+                    ].map((guest, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="p-2">{guest.name}</td>
+                        <td className="p-2">{guest.companions}</td>
+                        <td className="p-2">
+                          <Badge
+                            variant="secondary"
+                            className={
+                              guest.status === "confirmed"
+                                ? "bg-green-100 text-green-800"
+                                : guest.status === "pending"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-red-100 text-red-800"
+                            }
+                          >
+                            {guest.status === "confirmed"
+                              ? "Confirmado Presença"
+                              : guest.status === "pending"
+                                ? "Pendente"
+                                : "Confirmado Ausência"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Link>
         </Card>
       </div>
     </div>

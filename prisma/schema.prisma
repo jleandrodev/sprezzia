@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,44 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Transaction {
-  id            String                   @id @default(uuid())
-  name          String
-  type          TransactionType
-  amount        Decimal                  @db.Decimal(10, 2)
-  category      TransactionCategory
-  paymentMethod TransactionPaymentMethod
-  date          DateTime
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
-}
-
-enum TransactionType {
-  TRANSACTION
-  EXPENSE
-  INVESTIMENT
-}
-
-enum TransactionCategory {
-  HOUSING
-  TRANSPORTATION
-  FOOD
-  ENTERTAINMENT
-  HEALTH
-  UTILITY
-  SALARY
-  EDUCATION
-  OTHER
-}
-
-enum TransactionPaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  BANK_TRANSFER
-  BANK_SLIP
-  CASH
-  PIX
-  OTHER
+enum GuestStatus {
+  PENDENTE
+  CONFIRMADO_PRESENCA
+  CONFIRMADO_AUSENCIA
 }
 
 model Project {
@@ -66,56 +29,21 @@ model Project {
   updatedAt   DateTime  @updatedAt
   userId      String
   workspaceId String
-  events      Event[]
-}
+  guests      Guest[]
 
-model Event {
-  id          String     @id @default(uuid())
-  name        String
-  description String?
-  date        DateTime
-  projectId   String
-  project     Project    @relation(fields: [projectId], references: [id])
-  guestList   GuestList?
-}
-
-model GuestList {
-  id         String           @id @default(uuid())
-  eventId    String           @unique
-  event      Event            @relation(fields: [eventId], references: [id])
-  guestLists GuestListGuest[]
+  @@index([userId])
+  @@index([workspaceId])
 }
 
 model Guest {
-  id         String           @id @default(uuid())
-  name       String
-  phone      String?
-  guestLists GuestListGuest[]
-  companions Companion[]
-}
+  id        String       @id @default(cuid())
+  name      String
+  phone     String?      // Telefone do convidado principal
+  status    GuestStatus  @default(PENDENTE)
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-model GuestListGuest {
-  id          String    @id @default(uuid())
-  guestListId String
-  guestId     String
-  guest       Guest     @relation(fields: [guestId], references: [id])
-  guestList   GuestList @relation(fields: [guestListId], references: [id])
-  companions  Int
-
-  @@unique([guestListId, guestId])
-}
-
-model Companion {
-  id      String        @id @default(uuid())
-  name    String
-  type    CompanionType
-  guestId String
-  guest   Guest         @relation(fields: [guestId], references: [id])
-}
-
-enum CompanionType {
-  INFANT // Criança de 0-5 anos
-  CHILD // Criança de 6-10 anos
-  TEENAGER // Maior que 11 anos
-  ADULT // Adulto
+  @@index([projectId])
 }
