@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { usePageTitle } from "@/app/_contexts/PageTitleContext";
 import { ProjectService } from "@/services/project.service";
-import { DocumentList } from "@/app/_components/dashboard/documents/DocumentList";
+import DocumentList from "@/app/_components/dashboard/documents/DocumentList";
+import { notFound } from "next/navigation";
 
 interface DocsPageProps {
   params: {
@@ -11,12 +12,18 @@ interface DocsPageProps {
   };
 }
 
-export default function DocsPage({ params }: DocsPageProps) {
+async function getProject(id: string) {
+  const project = await ProjectService.findById(id);
+  if (!project) notFound();
+  return project;
+}
+
+export default async function DocsPage({ params }: DocsPageProps) {
   const { setTitle } = usePageTitle();
 
   useEffect(() => {
     const fetchProject = async () => {
-      const project = await ProjectService.findById(params.id);
+      const project = await getProject(params.id);
       if (project) {
         setTitle(project.name);
       }
@@ -26,7 +33,14 @@ export default function DocsPage({ params }: DocsPageProps) {
   }, [params.id, setTitle]);
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex flex-col space-y-1">
+        <h1 className="text-3xl font-bold">Documentos</h1>
+        <p className="text-muted-foreground">
+          Gerencie os documentos do seu projeto
+        </p>
+      </div>
+
       <DocumentList projectId={params.id} />
     </div>
   );

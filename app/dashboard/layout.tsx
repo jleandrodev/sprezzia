@@ -17,7 +17,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className="w-full h-full">
           <DashboardHeader />
           <div className="p-6 flex flex-col w-full h-full overflow-auto">
-            {/* @ts-expect-error Server Component */}
             <BreadcrumbNav />
             {children}
           </div>
