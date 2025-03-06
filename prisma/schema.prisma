@@ -81,7 +81,6 @@ model Document {
   @@index([projectId])
   @@map("documents")
 }
-
 model WhatsAppConfig {
   id          String   @id @default(uuid())
   projectId   String   @unique
@@ -93,3 +92,4 @@ model WhatsAppConfig {
 
   @@map("whatsapp_configs")
 }
+
