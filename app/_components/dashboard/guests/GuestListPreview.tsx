@@ -21,6 +21,7 @@ import {
   PaginationPrevious,
 } from "@/app/_components/ui/pagination";
 import { useToast } from "@/app/_hooks/use-toast";
+import { useGuests } from "@/app/_hooks/use-guests";
 
 interface Guest {
   id: string;
@@ -38,31 +39,19 @@ interface GuestListPreviewProps {
 }
 
 export default function GuestListPreview({ projectId }: GuestListPreviewProps) {
-  const [guests, setGuests] = useState<Guest[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { guests, isLoading, fetchGuests } = useGuests(projectId);
   const { toast } = useToast();
   const itemsPerPage = 5;
 
-  const fetchGuests = async () => {
-    try {
-      const response = await fetch(`/api/projects/${projectId}/guests`);
-      if (!response.ok) throw new Error("Erro ao buscar convidados");
-      const data = await response.json();
-      setGuests(data.guests);
-      setTotalPages(Math.ceil(data.guests.length / itemsPerPage));
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar a lista de convidados.",
-        variant: "destructive",
-      });
-    }
-  };
-
   useEffect(() => {
     fetchGuests();
-  }, [projectId, fetchGuests]);
+  }, [fetchGuests]);
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(guests.length / itemsPerPage));
+  }, [guests, itemsPerPage]);
 
   const getStatusStyle = (status: Guest["status"]) => {
     switch (status) {

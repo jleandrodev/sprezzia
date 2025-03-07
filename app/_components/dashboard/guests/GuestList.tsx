@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/app/_components/ui/badge";
 import { Button } from "@/app/_components/ui/button";
 import { useToast } from "@/app/_hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn } from "@/app/lib/utils";
 import {
   Card,
   CardContent,
@@ -26,6 +26,7 @@ import AddGuestDialog from "./AddGuestDialog";
 import { useProject } from "@/app/_contexts/ProjectContext";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
+import { useGuests } from "@/app/_hooks/use-guests";
 
 interface Companion {
   id: string;
@@ -48,28 +49,17 @@ interface GuestListProps {
 }
 
 export function GuestList({ projectId }: GuestListProps) {
-  const [guests, setGuests] = useState<Guest[]>([]);
+  const { guests, isLoading, fetchGuests } = useGuests(projectId);
   const { toast } = useToast();
   const { projectName } = useProject();
 
-  const fetchGuests = async () => {
-    try {
-      const response = await fetch(`/api/projects/${projectId}/guests`);
-      if (!response.ok) throw new Error("Erro ao buscar convidados");
-      const data = await response.json();
-      setGuests(data.guests);
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar a lista de convidados.",
-        variant: "destructive",
-      });
-    }
-  };
-
   useEffect(() => {
     fetchGuests();
-  }, [projectId, fetchGuests]);
+  }, [fetchGuests]);
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
 
   const getStatusStyle = (status: Guest["status"]) => {
     switch (status) {

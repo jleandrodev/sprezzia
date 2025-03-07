@@ -35,6 +35,7 @@ model Project {
 
   @@index([userId])
   @@index([workspaceId])
+  @@map("projects")
 }
 
 model Guest {
@@ -72,7 +73,7 @@ model Document {
   description String?
   type        String    // Tipo do arquivo (pdf, doc, image)
   size        Int       // Tamanho em bytes
-  url         String    // URL do arquivo no storage
+  content     String    @db.Text // Conteúdo do arquivo em base64
   projectId   String
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
@@ -81,6 +82,7 @@ model Document {
   @@index([projectId])
   @@map("documents")
 }
+
 model WhatsAppConfig {
   id          String   @id @default(uuid())
   projectId   String   @unique
@@ -92,4 +94,3 @@ model WhatsAppConfig {
 
   @@map("whatsapp_configs")
 }
-

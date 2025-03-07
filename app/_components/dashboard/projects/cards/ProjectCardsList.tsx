@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AddProjectDialog from "@/app/_components/dialog/AddProjectDialog";
 import AddProjectCard from "./AddProjectCard";
 import ProjectCard from "./ProjectCard";
@@ -25,7 +25,7 @@ export default function ProjectCardsList() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await fetch("/api/projects?workspaceId=default");
       if (!response.ok) throw new Error("Erro ao carregar projetos");
@@ -40,7 +40,7 @@ export default function ProjectCardsList() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchProjects();

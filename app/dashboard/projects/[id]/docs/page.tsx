@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePageTitle } from "@/app/_contexts/PageTitleContext";
 import { ProjectService } from "@/services/project.service";
-import DocumentList from "@/app/_components/dashboard/documents/DocumentList";
+import { DocumentList } from "@/app/_components/dashboard/documents/DocumentList";
 
 interface DocsPageProps {
   params: {

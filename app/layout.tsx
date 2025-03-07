@@ -13,7 +13,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
+    <ClerkProvider
+      appearance={{ baseTheme: dark }}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      dynamic
+    >
       <html lang="en">
         <body className="antialiased">
           <ThemeProvider

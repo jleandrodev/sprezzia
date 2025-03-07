@@ -16,6 +16,14 @@ interface Project {
   workspaceId: string;
 }
 
+interface DocumentData {
+  name: string;
+  description?: string;
+  type: string;
+  size: number;
+  content: string; // Conteúdo do arquivo em base64
+}
+
 export class ProjectService {
   static async create(data: {
     name: string;
@@ -93,6 +101,73 @@ export class ProjectService {
 
   static async delete(id: string) {
     return prisma.project.delete({
+      where: { id },
+    });
+  }
+
+  static async getProject(id: string) {
+    return prisma.project.findUnique({
+      where: { id },
+    });
+  }
+
+  static async getDocument(id: string) {
+    return prisma.document.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true,
+        size: true,
+        content: true,
+        projectId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  static async getDocuments(projectId: string) {
+    return prisma.document.findMany({
+      where: { projectId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true,
+        size: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  static async createDocument(projectId: string, data: DocumentData) {
+    return prisma.document.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        size: data.size,
+        content: data.content,
+        projectId,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true,
+        size: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  static async deleteDocument(id: string) {
+    return prisma.document.delete({
       where: { id },
     });
   }
