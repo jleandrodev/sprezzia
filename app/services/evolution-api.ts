@@ -12,24 +12,24 @@ export class EvolutionApiService {
 
   constructor() {
     this.baseUrl = process.env.EVOLUTION_API_URL || "";
-    this.instanceName = "Sprezzia"; 
+    this.instanceName = "Sprezzia";
     this.apiKey = process.env.EVOLUTION_API_KEY || "";
   }
 
   private formatPhoneNumber(phone: string): string {
     // Remove todos os caracteres não numéricos
     const numbers = phone.replace(/\D/g, "");
-    
+
     // Se o número já começar com 55, usa como está
     if (numbers.startsWith("55") && numbers.length >= 12) {
       return numbers;
     }
-    
+
     // Se tiver 11 dígitos (DDD + número), adiciona o DDI
     if (numbers.length === 11) {
       return `55${numbers}`;
     }
-    
+
     // Se tiver 10 dígitos (DDD + número sem o 9), adiciona o 9 e o DDI
     if (numbers.length === 10) {
       return `55${numbers.slice(0, 2)}9${numbers.slice(2)}`;
@@ -41,21 +41,18 @@ export class EvolutionApiService {
 
   private async createInstance() {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/instance/create`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": this.apiKey,
-          },
-          body: JSON.stringify({
-            instanceName: this.instanceName,
-            qrcode: true,
-            number: "",
-          }),
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/instance/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: this.apiKey,
+        },
+        body: JSON.stringify({
+          instanceName: this.instanceName,
+          qrcode: true,
+          number: "",
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -77,7 +74,7 @@ export class EvolutionApiService {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "apikey": this.apiKey,
+            apikey: this.apiKey,
           },
         }
       );
@@ -88,19 +85,16 @@ export class EvolutionApiService {
       }
 
       const state = await response.json();
-      
+
       // Se não estiver conectado, tenta reconectar
       if (state.state !== "open") {
-        await fetch(
-          `${this.baseUrl}/instance/connect/${this.instanceName}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": this.apiKey,
-            },
-          }
-        );
+        await fetch(`${this.baseUrl}/instance/connect/${this.instanceName}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: this.apiKey,
+          },
+        });
       }
 
       return state;
@@ -119,7 +113,7 @@ export class EvolutionApiService {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": this.apiKey,
+            apikey: this.apiKey,
           },
           body: JSON.stringify({
             numbers: [formattedPhone],
@@ -161,7 +155,7 @@ export class EvolutionApiService {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": this.apiKey,
+            apikey: this.apiKey,
           },
           body: JSON.stringify({
             number: formattedPhone,

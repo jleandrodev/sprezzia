@@ -246,14 +246,16 @@ export function GuestList({ projectId }: GuestListProps) {
         </Table>
       </div>
 
-      <div className="flex justify-end mt-6">
-        <Link href={`/dashboard/projects/${projectId}/whatsapp`}>
-          <Button className="flex items-center gap-2" variant="secondary">
-            <MessageSquare className="h-4 w-4" />
-            Disparar Mensagens WhatsApp
-          </Button>
-        </Link>
-      </div>
+      {guests.length > 0 && (
+        <div className="flex justify-end mt-6">
+          <Link href={`/dashboard/projects/${projectId}/whatsapp`}>
+            <Button className="flex items-center gap-2" variant="secondary">
+              <MessageSquare className="h-4 w-4" />
+              Disparar Mensagens WhatsApp
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

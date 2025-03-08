@@ -41,7 +41,7 @@ function SidebarLink({ href, icon, label, disabled }: SidebarLinkProps) {
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
             isActive
-              ? "bg-[#55B02E]/20 text-[#55B02E]"
+              ? "bg-[#55B02E] text-white"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
             disabled && "opacity-60 cursor-not-allowed hover:bg-transparent"
           )}

@@ -1,107 +1,103 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuth } from "@clerk/nextjs/server";
 import { EvolutionApiService } from "@/app/services/evolution-api";
 
-export const dynamic = "force-dynamic";
-
-export async function POST(
-  request: NextRequest,
+export async function GET(
+  request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
-    const { userId } = getAuth(request);
-    if (!userId) {
-      return new NextResponse(
-        JSON.stringify({ error: "Não autorizado" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Busca a configuração do WhatsApp
-    const whatsappConfig = await prisma.whatsAppConfig.findUnique({
+    // Busca apenas convidados que têm número de telefone
+    const guests = await prisma.guest.findMany({
       where: {
         projectId: params.id,
+        NOT: {
+          phone: null,
+        },
+      },
+      include: {
+        companions: true,
       },
     });
 
-    if (!whatsappConfig) {
-      return new NextResponse(
-        JSON.stringify({ error: "Configuração do WhatsApp não encontrada" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    return NextResponse.json({ guestsCount: guests.length });
+  } catch (error) {
+    console.error("Erro ao buscar convidados:", error);
+    return NextResponse.json(
+      { error: "Erro ao buscar convidados" },
+      { status: 500 }
+    );
+  }
+}
 
-    // Busca os convidados do projeto
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { template } = await request.json();
+    const evolutionApi = new EvolutionApiService();
+
+    // Busca convidados com telefone e seus acompanhantes
     const guests = await prisma.guest.findMany({
-      where: { projectId: params.id },
-      include: { companions: true },
+      where: {
+        projectId: params.id,
+        NOT: {
+          phone: null,
+        },
+      },
+      include: {
+        companions: true,
+      },
     });
 
-    const evolutionApi = new EvolutionApiService();
-    const results: Record<string, any>[] = [];
+    const summary = {
+      successful: 0,
+      failed: 0,
+      skipped: 0,
+    };
 
-    // Envia mensagens para cada convidado
     for (const guest of guests) {
-      if (!guest.phone) {
-        results.push({
-          guest: guest.name,
-          status: "skipped",
-          error: "Telefone não cadastrado",
-        });
-        continue;
-      }
-
-      const guestList = [guest.name, ...guest.companions.map((c) => c.name)];
-      const message = `${whatsappConfig.introduction}\n\n${guestList.join("\n")}\n\n${whatsappConfig.conclusion}`;
-
       try {
+        // Monta a lista de nomes (convidado principal + acompanhantes)
+        const guestList = [
+          guest.name,
+          ...guest.companions.map((companion) => companion.name),
+        ];
+
+        // Monta a mensagem completa
+        const message = `${template.introduction}\n\n${guestList.join("\n")}\n\n${template.conclusion}`;
+
+        // Remove caracteres não numéricos do telefone
+        const phone = guest.phone?.replace(/\D/g, "");
+
+        if (!phone) {
+          summary.skipped++;
+          continue;
+        }
+
+        // Envia a mensagem
         await evolutionApi.sendMessage({
-          phone: guest.phone,
+          phone,
           message,
         });
 
-        results.push({
-          guest: guest.name,
-          phone: guest.phone,
-          status: "success",
-        });
+        summary.successful++;
 
-        // Aguarda 1.2 segundos entre cada envio para evitar bloqueios
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        // Adiciona um pequeno delay entre as mensagens
+        await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Falha ao enviar mensagem";
         console.error(`Erro ao enviar mensagem para ${guest.name}:`, error);
-        results.push({
-          guest: guest.name,
-          phone: guest.phone,
-          status: "error",
-          error: errorMessage,
-        });
+        summary.failed++;
       }
     }
 
-    const successful = results.filter(r => r.status === "success").length;
-    const failed = results.filter(r => r.status === "error").length;
-    const skipped = results.filter(r => r.status === "skipped").length;
-
-    return new NextResponse(
-      JSON.stringify({
-        results,
-        summary: {
-          total: results.length,
-          successful,
-          failed,
-          skipped,
-        }
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return NextResponse.json({ summary });
   } catch (error) {
-    console.error("Erro ao processar envio de mensagens:", error);
-    return new NextResponse(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    console.error("Erro ao enviar mensagens:", error);
+    return NextResponse.json(
+      { error: "Erro ao enviar mensagens" },
+      { status: 500 }
     );
   }
 }
