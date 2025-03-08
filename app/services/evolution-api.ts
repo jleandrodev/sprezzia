@@ -41,7 +41,8 @@ export class EvolutionApiService {
 
   private async createInstance() {
     try {
-      const response = await fetch(`${this.baseUrl}/instance/create`, {
+      const url = new URL("/instance/create", this.baseUrl);
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,16 +69,14 @@ export class EvolutionApiService {
 
   private async checkConnection() {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/instance/connectionState/${this.instanceName}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: this.apiKey,
-          },
-        }
-      );
+      const url = new URL(`/instance/connectionState/${this.instanceName}`, this.baseUrl);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: this.apiKey,
+        },
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -88,7 +87,8 @@ export class EvolutionApiService {
 
       // Se não estiver conectado, tenta reconectar
       if (state.state !== "open") {
-        await fetch(`${this.baseUrl}/instance/connect/${this.instanceName}`, {
+        const reconnectUrl = new URL(`/instance/connect/${this.instanceName}`, this.baseUrl);
+        await fetch(reconnectUrl, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -107,19 +107,17 @@ export class EvolutionApiService {
   private async checkPhoneExists(phone: string): Promise<boolean> {
     try {
       const formattedPhone = this.formatPhoneNumber(phone);
-      const response = await fetch(
-        `${this.baseUrl}/chat/whatsappNumbers/${this.instanceName}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: this.apiKey,
-          },
-          body: JSON.stringify({
-            numbers: [formattedPhone],
-          }),
-        }
-      );
+      const url = new URL(`/chat/whatsappNumbers/${this.instanceName}`, this.baseUrl);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: this.apiKey,
+        },
+        body: JSON.stringify({
+          numbers: [formattedPhone],
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -149,20 +147,18 @@ export class EvolutionApiService {
       }
 
       // Envia a mensagem
-      const response = await fetch(
-        `${this.baseUrl}/message/sendText/${this.instanceName}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: this.apiKey,
-          },
-          body: JSON.stringify({
-            number: formattedPhone,
-            text: message,
-          }),
-        }
-      );
+      const url = new URL(`/message/sendText/${this.instanceName}`, this.baseUrl);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: this.apiKey,
+        },
+        body: JSON.stringify({
+          number: formattedPhone,
+          text: message,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
