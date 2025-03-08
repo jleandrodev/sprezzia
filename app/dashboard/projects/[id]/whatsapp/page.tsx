@@ -10,6 +10,8 @@ import {
 import { Textarea } from "@/app/_components/ui/textarea";
 import { Button } from "@/app/_components/ui/button";
 import { useToast } from "@/app/_hooks/use-toast";
+import { useGuests } from "@/app/_hooks/use-guests";
+import type { Guest, Companion } from "@/app/_hooks/use-guests";
 import {
   Dialog,
   DialogContent,
@@ -25,10 +27,9 @@ interface WhatsAppPageProps {
   };
 }
 
-interface Guest {
-  name: string;
-  phone?: string;
-  companions: { name: string }[];
+interface WhatsAppConfig {
+  introduction: string;
+  conclusion: string;
 }
 
 export default function WhatsAppPage({ params }: WhatsAppPageProps) {
@@ -38,9 +39,18 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const { guests, isLoading: guestsLoading, refreshGuests } = useGuests(params.id);
   const [previewGuest, setPreviewGuest] = useState<Guest>({
+    id: "preview",
     name: "João Silva",
-    companions: [{ name: "Maria Silva" }, { name: "Pedro Silva" }],
+    phone: null,
+    status: "PENDENTE",
+    companions: [
+      { id: "1", name: "Maria Silva", status: "PENDENTE" },
+      { id: "2", name: "Pedro Silva", status: "PENDENTE" }
+    ] as Companion[],
+    children_0_6: 0,
+    children_7_10: 0,
   });
 
   useEffect(() => {
@@ -71,7 +81,7 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
   }, [params.id, toast]);
 
   const generatePreview = (guest: Guest) => {
-    const guestList = [guest.name, ...guest.companions.map((c) => c.name)];
+    const guestList = [guest.name, ...guest.companions.map((companion: Companion) => companion.name)];
     return `${introduction}\n\n${guestList.join("\n")}\n\n${conclusion}`;
   };
 
@@ -115,17 +125,15 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
 
       if (!response.ok) throw new Error("Erro ao enviar mensagens");
 
-      const { results } = await response.json();
+      const { results, summary } = await response.json();
 
-      const successful = results.filter(
-        (r: any) => r.status === "success"
-      ).length;
-      const failed = results.filter((r: any) => r.status === "error").length;
+      // Atualiza a lista de convidados após o envio
+      await refreshGuests();
 
       toast({
         title: "Envio concluído",
-        description: `${successful} mensagens enviadas com sucesso. ${failed} falhas.`,
-        variant: successful > 0 ? "default" : "destructive",
+        description: `${summary.successful} mensagens enviadas com sucesso, ${summary.failed} falhas, ${summary.skipped} ignorados.`,
+        variant: summary.successful > 0 ? "default" : "destructive",
       });
     } catch (error) {
       toast({
@@ -139,10 +147,11 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
     }
   };
 
-  if (loading) {
+  if (loading || guestsLoading) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
           <span className="text-muted-foreground">Carregando...</span>
         </div>
       </div>
@@ -199,23 +208,27 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
                 {generatePreview(previewGuest)}
               </div>
 
-              <Button
-                onClick={() => setShowConfirmDialog(true)}
-                disabled={sending}
-                className="w-full bg-[#55B02E] hover:bg-[#55B02E]/90"
-              >
-                {sending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Enviar Mensagens
-                  </>
-                )}
-              </Button>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  {guests.length} convidados encontrados
+                </p>
+                <Button
+                  onClick={() => setShowConfirmDialog(true)}
+                  disabled={sending || guests.length === 0}
+                >
+                  {sending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar Mensagens
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -224,13 +237,13 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar envio</DialogTitle>
+            <DialogTitle>Confirmar Envio</DialogTitle>
             <DialogDescription>
-              Você está prestes a enviar mensagens para todos os convidados que
-              possuem número de telefone cadastrado. Deseja continuar?
+              Você está prestes a enviar mensagens para {guests.length} convidados.
+              Deseja continuar?
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-4">
             <Button
               variant="outline"
               onClick={() => setShowConfirmDialog(false)}
@@ -238,11 +251,7 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
             >
               Cancelar
             </Button>
-            <Button
-              onClick={handleSendMessages}
-              disabled={sending}
-              className="bg-[#55B02E] hover:bg-[#55B02E]/90"
-            >
+            <Button onClick={handleSendMessages} disabled={sending}>
               {sending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

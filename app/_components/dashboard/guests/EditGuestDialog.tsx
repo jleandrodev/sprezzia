@@ -30,6 +30,8 @@ import {
 } from "@/app/_components/ui/select";
 import { Edit, Plus, Trash } from "lucide-react";
 import { useToast } from "@/app/_hooks/use-toast";
+import { useGuests } from "@/app/_hooks/use-guests";
+import type { Guest, Companion } from "@/app/_hooks/use-guests";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -55,19 +57,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EditGuestDialogProps {
   projectId: string;
-  guest: {
-    id: string;
-    name: string;
-    phone: string | null;
-    status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
-    companions: Array<{
-      id: string;
-      name: string;
-      status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
-    }>;
-    children_0_6: number;
-    children_7_10: number;
-  };
+  guest: Guest;
   onSuccess?: () => void;
 }
 
@@ -79,6 +69,7 @@ export default function EditGuestDialog({
   const [step, setStep] = useState(1);
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { refreshGuests } = useGuests(projectId);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -109,13 +100,19 @@ export default function EditGuestDialog({
 
       if (!response.ok) throw new Error("Erro ao atualizar convidado");
 
+      // Atualiza a lista em todos os componentes que usam o hook useGuests
+      await refreshGuests();
+      
+      // Chama o callback onSuccess se existir (para compatibilidade)
+      onSuccess?.();
+
       toast({
         title: "Sucesso",
         description: "Convidado atualizado com sucesso!",
       });
 
       setOpen(false);
-      onSuccess?.();
+      setStep(1);
     } catch (error) {
       toast({
         title: "Erro",
@@ -162,7 +159,13 @@ export default function EditGuestDialog({
   }, [open, guest, form]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      setOpen(newOpen);
+      if (!newOpen) {
+        setStep(1);
+        form.reset();
+      }
+    }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Edit className="h-4 w-4" />
@@ -270,7 +273,7 @@ export default function EditGuestDialog({
                               if (e.key === "Enter") {
                                 e.preventDefault();
                                 const input = e.target as HTMLInputElement;
-                                const name = input.value;
+                                const name = input.value.trim();
                                 if (name) {
                                   append({ name, status: "PENDENTE" });
                                   input.value = "";
@@ -285,7 +288,7 @@ export default function EditGuestDialog({
                               const input = document.getElementById(
                                 "newCompanion"
                               ) as HTMLInputElement;
-                              const name = input.value;
+                              const name = input.value.trim();
                               if (name) {
                                 append({ name, status: "PENDENTE" });
                                 input.value = "";
@@ -310,11 +313,13 @@ export default function EditGuestDialog({
                         control={form.control}
                         name={`companions.${index}.name`}
                         render={({ field }) => (
-                          <Input
-                            {...field}
-                            className="flex-1 min-w-0"
-                            placeholder="Nome do acompanhante"
-                          />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="flex-1 min-w-0"
+                              placeholder="Nome do acompanhante"
+                            />
+                          </FormControl>
                         )}
                       />
                       <FormField
@@ -371,7 +376,7 @@ export default function EditGuestDialog({
                           min="0"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                            field.onChange(parseInt(e.target.value) || 0)
                           }
                         />
                       </FormControl>
@@ -392,7 +397,7 @@ export default function EditGuestDialog({
                           min="0"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                            field.onChange(parseInt(e.target.value) || 0)
                           }
                         />
                       </FormControl>
@@ -403,14 +408,14 @@ export default function EditGuestDialog({
               </div>
             )}
 
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between">
               {step > 1 && (
                 <Button type="button" variant="outline" onClick={previousStep}>
                   Voltar
                 </Button>
               )}
-              <Button type="submit">
-                {step < 3 ? "Próximo" : "Salvar Alterações"}
+              <Button type="submit" className="ml-auto">
+                {step < 3 ? "Próximo" : "Salvar"}
               </Button>
             </div>
           </form>

@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/app/_hooks/use-toast';
 
-interface Companion {
+export interface Companion {
   id: string;
   name: string;
   status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
 }
 
-interface Guest {
+export interface Guest {
   id: string;
   name: string;
   phone: string | null;

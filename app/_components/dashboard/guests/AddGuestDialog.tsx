@@ -30,6 +30,7 @@ import {
 } from "@/app/_components/ui/select";
 import { Plus, Trash } from "lucide-react";
 import { useToast } from "@/app/_hooks/use-toast";
+import { useGuests } from "@/app/_hooks/use-guests";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -74,6 +75,7 @@ export default function AddGuestDialog({
   const [step, setStep] = useState(1);
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { refreshGuests } = useGuests(projectId);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -102,9 +104,13 @@ export default function AddGuestDialog({
         description: "Convidado adicionado com sucesso!",
       });
 
+      await refreshGuests();
+      
+      onSuccess?.();
+
       setOpen(false);
       form.reset();
-      onSuccess?.();
+      setStep(1);
     } catch (error) {
       toast({
         title: "Erro",
@@ -137,7 +143,13 @@ export default function AddGuestDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      setOpen(newOpen);
+      if (!newOpen) {
+        form.reset();
+        setStep(1);
+      }
+    }}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -246,7 +258,7 @@ export default function AddGuestDialog({
                               if (e.key === "Enter") {
                                 e.preventDefault();
                                 const input = e.target as HTMLInputElement;
-                                const name = input.value;
+                                const name = input.value.trim();
                                 if (name) {
                                   append({ name, status: "PENDENTE" });
                                   input.value = "";
@@ -261,7 +273,7 @@ export default function AddGuestDialog({
                               const input = document.getElementById(
                                 "newCompanion"
                               ) as HTMLInputElement;
-                              const name = input.value;
+                              const name = input.value.trim();
                               if (name) {
                                 append({ name, status: "PENDENTE" });
                                 input.value = "";
@@ -286,11 +298,13 @@ export default function AddGuestDialog({
                         control={form.control}
                         name={`companions.${index}.name`}
                         render={({ field }) => (
-                          <Input
-                            {...field}
-                            className="flex-1 min-w-0"
-                            placeholder="Nome do acompanhante"
-                          />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="flex-1 min-w-0"
+                              placeholder="Nome do acompanhante"
+                            />
+                          </FormControl>
                         )}
                       />
                       <FormField
@@ -347,7 +361,7 @@ export default function AddGuestDialog({
                           min="0"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                            field.onChange(parseInt(e.target.value) || 0)
                           }
                         />
                       </FormControl>
@@ -368,7 +382,7 @@ export default function AddGuestDialog({
                           min="0"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                            field.onChange(parseInt(e.target.value) || 0)
                           }
                         />
                       </FormControl>
@@ -379,14 +393,14 @@ export default function AddGuestDialog({
               </div>
             )}
 
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between">
               {step > 1 && (
                 <Button type="button" variant="outline" onClick={previousStep}>
                   Voltar
                 </Button>
               )}
-              <Button type="submit">
-                {step < 3 ? "Próximo" : "Finalizar"}
+              <Button type="submit" className="ml-auto">
+                {step < 3 ? "Próximo" : "Adicionar"}
               </Button>
             </div>
           </form>

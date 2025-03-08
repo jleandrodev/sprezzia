@@ -1,15 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
+import { EvolutionApiService } from "@/app/services/evolution-api";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const { userId } = await auth();
+    const { userId } = getAuth(request);
     if (!userId) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return new NextResponse(
+        JSON.stringify({ error: "Não autorizado" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Busca a configuração do WhatsApp
@@ -20,9 +26,9 @@ export async function POST(
     });
 
     if (!whatsappConfig) {
-      return NextResponse.json(
-        { error: "Configuração do WhatsApp não encontrada" },
-        { status: 404 }
+      return new NextResponse(
+        JSON.stringify({ error: "Configuração do WhatsApp não encontrada" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -32,32 +38,70 @@ export async function POST(
       include: { companions: true },
     });
 
-    const results = [];
+    const evolutionApi = new EvolutionApiService();
+    const results: Record<string, any>[] = [];
 
-    // Simula o envio de mensagens (implementação futura)
+    // Envia mensagens para cada convidado
     for (const guest of guests) {
-      if (!guest.phone) continue;
+      if (!guest.phone) {
+        results.push({
+          guest: guest.name,
+          status: "skipped",
+          error: "Telefone não cadastrado",
+        });
+        continue;
+      }
 
       const guestList = [guest.name, ...guest.companions.map((c) => c.name)];
       const message = `${whatsappConfig.introduction}\n\n${guestList.join("\n")}\n\n${whatsappConfig.conclusion}`;
 
-      results.push({
-        guest: guest.name,
-        phone: guest.phone,
-        status: "pending",
-        message: message,
-      });
+      try {
+        await evolutionApi.sendMessage({
+          phone: guest.phone,
+          message,
+        });
+
+        results.push({
+          guest: guest.name,
+          phone: guest.phone,
+          status: "success",
+        });
+
+        // Aguarda 1.2 segundos entre cada envio para evitar bloqueios
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Falha ao enviar mensagem";
+        console.error(`Erro ao enviar mensagem para ${guest.name}:`, error);
+        results.push({
+          guest: guest.name,
+          phone: guest.phone,
+          status: "error",
+          error: errorMessage,
+        });
+      }
     }
 
-    return NextResponse.json({
-      message: "Integração com WhatsApp em desenvolvimento",
-      results,
-    });
+    const successful = results.filter(r => r.status === "success").length;
+    const failed = results.filter(r => r.status === "error").length;
+    const skipped = results.filter(r => r.status === "skipped").length;
+
+    return new NextResponse(
+      JSON.stringify({
+        results,
+        summary: {
+          total: results.length,
+          successful,
+          failed,
+          skipped,
+        }
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("Erro ao processar envio de mensagens:", error);
-    return NextResponse.json(
-      { error: "Erro ao processar envio de mensagens" },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: "Erro interno do servidor" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
