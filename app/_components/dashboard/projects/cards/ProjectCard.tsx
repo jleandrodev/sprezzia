@@ -13,7 +13,7 @@ export interface ProjectCardProps {
   budget?: number | null;
 }
 
-export default function ProjectCard({
+export function ProjectCard({
   id,
   title,
   description,

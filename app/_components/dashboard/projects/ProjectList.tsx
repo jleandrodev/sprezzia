@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ProjectCard } from "@/app/_components/dashboard/projects/ProjectCard";
+import { ProjectCard } from "@/app/_components/dashboard/projects/cards/ProjectCard";
 import { useToast } from "@/app/_hooks/use-toast";
 
 interface Project {
@@ -44,7 +44,14 @@ export function ProjectList({ workspaceId }: ProjectListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+        <ProjectCard
+          key={project.id}
+          id={project.id}
+          title={project.name}
+          description={project.description || ""}
+          budget={project.budget}
+          image={project.image || undefined}
+        />
       ))}
       {projects.length === 0 && (
         <div className="col-span-full text-center py-12 text-muted-foreground">

@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import ProjectCard from "./ProjectCard";
+import { ProjectCard } from "./ProjectCard";
 import Link from "next/link";
 import {
   Card,

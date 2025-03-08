@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import AddProjectDialog from "@/app/_components/dialog/AddProjectDialog";
 import AddProjectCard from "./AddProjectCard";
-import ProjectCard from "./ProjectCard";
+import { ProjectCard } from "./ProjectCard";
 import { useToast } from "@/app/_hooks/use-toast";
 import Link from "next/link";
 
