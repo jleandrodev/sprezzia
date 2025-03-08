@@ -1,13 +1,18 @@
-import { auth } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
+import { getAuth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/_lib/prisma";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { userId } = auth();
+    const { userId } = getAuth(request);
 
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse(
+        JSON.stringify({ error: "Não autorizado" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const [totalProjects, activeProjects] = await Promise.all([
