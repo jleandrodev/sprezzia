@@ -1,6 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { dark } from "@clerk/themes";
+import { ptBR } from "@clerk/localizations";
 import { ThemeProvider } from "./_components/theme/theme-provider";
 
 export const metadata = {
@@ -17,6 +17,7 @@ export default function RootLayout({
       afterSignInUrl="/dashboard"
       afterSignUpUrl="/dashboard"
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      localization={ptBR}
       dynamic
     >
       <html lang="en">
