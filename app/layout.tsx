@@ -21,7 +21,7 @@ export default function RootLayout({
       localization={ptBR}
       dynamic
     >
-      <html lang="en">
+      <html lang="en" className="light">
         <body className="antialiased">
           <ThemeProvider
             attribute="class"
