@@ -25,7 +25,7 @@ import ImportGuestsDialog from "./ImportGuestsDialog";
 import AddGuestDialog from "./AddGuestDialog";
 import { useProject } from "@/app/_contexts/ProjectContext";
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Link2 } from "lucide-react";
 import { useGuests } from "@/app/_hooks/use-guests";
 
 interface Companion {
@@ -124,6 +124,25 @@ export function GuestList({ projectId }: GuestListProps) {
     }
   };
 
+  const copyPublicLink = async () => {
+    try {
+      const publicUrl = `${window.location.origin}/public/guests/${projectId}`;
+      await navigator.clipboard.writeText(publicUrl);
+
+      toast({
+        title: "Link copiado!",
+        description:
+          "O link público foi copiado para sua área de transferência",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível copiar o link",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return <div>Carregando...</div>;
   }
@@ -196,6 +215,14 @@ export function GuestList({ projectId }: GuestListProps) {
           <p className="text-muted-foreground">{projectName}</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={copyPublicLink}
+            className="hover:bg-blue-50 hover:cursor-pointer border-blue-500 text-blue-500 hover:text-blue-600 hover:border-blue-600"
+          >
+            <Link2 className="h-4 w-4 mr-2" />
+            Link Público
+          </Button>
           <AddGuestDialog projectId={projectId} onSuccess={fetchGuests} />
           <ImportGuestsDialog projectId={projectId} onSuccess={fetchGuests} />
         </div>
