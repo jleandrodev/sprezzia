@@ -55,7 +55,74 @@ export function GuestList({ projectId }: GuestListProps) {
 
   useEffect(() => {
     fetchGuests();
-  }, [fetchGuests]);
+  }, [fetchGuests, projectId]);
+
+  const updateAllStatus = async (
+    guestId: string,
+    status: "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA"
+  ) => {
+    try {
+      // Atualiza o convidado principal
+      const response = await fetch(
+        `/api/projects/${projectId}/guests/${guestId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar status do convidado principal");
+      }
+
+      // Atualiza o status dos acompanhantes
+      const guest = guests.find((g) => g.id === guestId);
+      if (guest?.companions.length) {
+        const companionPromises = guest.companions.map((companion) =>
+          fetch(
+            `/api/projects/${projectId}/guests/${guestId}/companions/${companion.id}/status`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ status }),
+            }
+          )
+        );
+
+        // Aguarda todas as atualizações dos acompanhantes terminarem
+        const results = await Promise.all(companionPromises);
+
+        // Verifica se todas as atualizações foram bem sucedidas
+        if (!results.every((r) => r.ok)) {
+          throw new Error("Erro ao atualizar status dos acompanhantes");
+        }
+      }
+
+      toast({
+        title: "Sucesso",
+        description: `Status atualizado para ${
+          status === "CONFIRMADO_PRESENCA"
+            ? "presença confirmada"
+            : "ausência confirmada"
+        }`,
+      });
+
+      // Força a atualização da página
+      window.location.reload();
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return <div>Carregando...</div>;
@@ -227,7 +294,29 @@ export function GuestList({ projectId }: GuestListProps) {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="hover:bg-emerald-50 hover:cursor-pointer border-emerald-500 text-emerald-500 hover:text-emerald-600 hover:border-emerald-600"
+                      onClick={async () => {
+                        await updateAllStatus(guest.id, "CONFIRMADO_PRESENCA");
+                        await fetchGuests(); // Força atualização após a mudança
+                      }}
+                    >
+                      Confirmar Todos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="hover:bg-yellow-50 hover:cursor-pointer border-yellow-500 text-yellow-500 hover:text-yellow-600 hover:border-yellow-600"
+                      onClick={async () => {
+                        await updateAllStatus(guest.id, "CONFIRMADO_AUSENCIA");
+                        await fetchGuests(); // Força atualização após a mudança
+                      }}
+                    >
+                      Todos Ausentes
+                    </Button>
                     <EditGuestDialog
                       projectId={projectId}
                       guest={guest}
