@@ -14,7 +14,6 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider
-      appearance={{ baseTheme: dark }}
       afterSignInUrl="/dashboard"
       afterSignUpUrl="/dashboard"
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
