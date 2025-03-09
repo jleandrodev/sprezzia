@@ -7,7 +7,7 @@ export default function DashboardHeader() {
     <div className="flex flex-row justify-between items-center p-2 border-b border-muted">
       <SidebarTrigger />
       <div className="flex flex-row justify-between items-center gap-2">
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
         <UserButton showName />
       </div>
     </div>
