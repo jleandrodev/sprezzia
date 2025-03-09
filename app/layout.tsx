@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ptBR } from "@clerk/localizations";
 import { ThemeProvider } from "./_components/theme/theme-provider";
+import {} from "@clerk/themes";
 
 export const metadata = {
   title: "Gestão inteligente de eventos | Sprezzia",
@@ -25,6 +26,7 @@ export default function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
+            forcedTheme="light"
             enableSystem
             disableTransitionOnChange
           >
