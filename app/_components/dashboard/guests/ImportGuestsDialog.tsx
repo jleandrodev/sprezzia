@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/app/_components/ui/dialog";
 import { Button } from "@/app/_components/ui/button";
 import { Upload, Download, FileSpreadsheet } from "lucide-react";
@@ -17,13 +16,16 @@ import { Input } from "@/app/_components/ui/input";
 interface ImportGuestsDialogProps {
   projectId: string;
   onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function ImportGuestsDialog({
   projectId,
   onSuccess,
+  open,
+  onOpenChange,
 }: ImportGuestsDialogProps) {
-  const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
@@ -84,7 +86,7 @@ export default function ImportGuestsDialog({
         description: `${result.imported} convidados importados com sucesso!`,
       });
 
-      setOpen(false);
+      setIsUploading(false);
       onSuccess?.();
     } catch (error) {
       toast({
@@ -101,13 +103,7 @@ export default function ImportGuestsDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Upload className="h-4 w-4" />
-          Importar
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Importar Convidados</DialogTitle>
