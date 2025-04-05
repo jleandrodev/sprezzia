@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/_components/ui/dialog";
+import { WhatsAppConnection } from "@/app/_components/dashboard/whatsapp/WhatsAppConnection";
 
 interface MessageTemplate {
   introduction: string;
@@ -34,8 +35,13 @@ interface Guest {
   companions: { name: string }[];
 }
 
-export default function WhatsAppPage() {
-  const params = useParams();
+interface WhatsAppPageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function WhatsAppPage({ params }: WhatsAppPageProps) {
   const { projectName } = useProject();
   const { toast } = useToast();
   const [template, setTemplate] = useState<MessageTemplate>({
@@ -296,327 +302,175 @@ export default function WhatsAppPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold">Disparo de Mensagens</h1>
-        <p className="text-muted-foreground">{projectName}</p>
-      </div>
+    <div className="container mx-auto py-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold">WhatsApp</h1>
+            <p className="text-muted-foreground">
+              Envie mensagens para seus convidados
+            </p>
+          </div>
+          <WhatsAppConnection projectId={params.id} />
+        </div>
 
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Confirmar envio de mensagens
-            </DialogTitle>
-            <DialogDescription className="space-y-4">
-              <div className="space-y-2">
-                <p>Para quem você deseja enviar as mensagens?</p>
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="targetAudience"
-                      value="all"
-                      checked={targetAudience === "all"}
-                      onChange={(e) =>
-                        setTargetAudience(e.target.value as "all" | "pending")
-                      }
-                      className="h-4 w-4"
-                    />
-                    <span>Todos os convidados ({guestsCount})</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="targetAudience"
-                      value="pending"
-                      checked={targetAudience === "pending"}
-                      onChange={(e) =>
-                        setTargetAudience(e.target.value as "all" | "pending")
-                      }
-                      className="h-4 w-4"
-                    />
-                    <span>
-                      Apenas convidados pendentes ({pendingGuestsCount})
+        <div className="grid grid-cols-1 gap-8">
+          {/* Confirmação de Presença */}
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>Confirmação de Presença</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuração */}
+                <div className="space-y-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Introdução
+                          <span className="text-muted-foreground ml-2 text-sm font-normal">
+                            (será exibida antes da lista de nomes)
+                          </span>
+                        </label>
+                        <Textarea
+                          value={template.introduction}
+                          onChange={(e) =>
+                            setTemplate((prev) => ({
+                              ...prev,
+                              introduction: e.target.value,
+                            }))
+                          }
+                          placeholder="Ex: Olá! Confirmamos sua presença e de seus acompanhantes para nosso evento:"
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Conclusão
+                          <span className="text-muted-foreground ml-2 text-sm font-normal">
+                            (será exibida após a lista de nomes)
+                          </span>
+                        </label>
+                        <Textarea
+                          value={template.conclusion}
+                          onChange={(e) =>
+                            setTemplate((prev) => ({
+                              ...prev,
+                              conclusion: e.target.value,
+                            }))
+                          }
+                          placeholder="Será um prazer tê-los conosco nesse dia tão especial!"
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-start">
+                        <Button onClick={handleSave} disabled={isSaving}>
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            "Salvar Template"
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Preview */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">
+                      Preview da Mensagem
+                    </h3>
+                    <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[300px] text-sm">
+                      {generatePreview()}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="gap-2 w-full"
+                    onClick={handleSendClick}
+                    disabled={isSending}
+                  >
+                    {isSending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    {isSending ? "Enviando..." : "Enviar Mensagens"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mensagem Simples */}
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>Mensagem Simples</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuração */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Mensagem
+                    <span className="text-muted-foreground ml-2 text-sm font-normal">
+                      (será enviada para todos os convidados)
                     </span>
                   </label>
+                  <Textarea
+                    value={simpleMessage}
+                    onChange={(e) => setSimpleMessage(e.target.value)}
+                    placeholder="Digite aqui a mensagem que será enviada para todos os convidados..."
+                    className="min-h-[300px]"
+                  />
                 </div>
-              </div>
-              <p>
-                Você está prestes a enviar mensagens para{" "}
-                {targetAudience === "all" ? guestsCount : pendingGuestsCount}{" "}
-                convidado(s) que possuem número de telefone cadastrado.
-              </p>
-              <p>Deseja prosseguir com o envio?</p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmDialog(false)}
-              disabled={isSending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleConfirmSend}
-              disabled={isSending}
-              className="gap-2"
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Confirmar Envio
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      <Dialog
-        open={showSimpleMessageConfirmDialog}
-        onOpenChange={setShowSimpleMessageConfirmDialog}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Confirmar envio de mensagens
-            </DialogTitle>
-            <DialogDescription className="space-y-4">
-              <div className="space-y-2">
-                <p>Para quem você deseja enviar as mensagens?</p>
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="targetAudience"
-                      value="all"
-                      checked={targetAudience === "all"}
-                      onChange={(e) =>
-                        setTargetAudience(e.target.value as "all" | "pending")
-                      }
-                      className="h-4 w-4"
-                    />
-                    <span>Todos os convidados ({guestsCount})</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="targetAudience"
-                      value="pending"
-                      checked={targetAudience === "pending"}
-                      onChange={(e) =>
-                        setTargetAudience(e.target.value as "all" | "pending")
-                      }
-                      className="h-4 w-4"
-                    />
-                    <span>
-                      Apenas convidados pendentes ({pendingGuestsCount})
-                    </span>
-                  </label>
-                </div>
-              </div>
-              <p>
-                Você está prestes a enviar mensagens para{" "}
-                {targetAudience === "all" ? guestsCount : pendingGuestsCount}{" "}
-                convidado(s) que possuem número de telefone cadastrado.
-              </p>
-              <p>Deseja prosseguir com o envio?</p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowSimpleMessageConfirmDialog(false)}
-              disabled={isSimpleMessageSending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleSimpleMessageConfirmSend}
-              disabled={isSimpleMessageSending}
-              className="gap-2"
-            >
-              {isSimpleMessageSending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Confirmar Envio
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <div className="grid grid-cols-1 gap-8">
-        {/* Confirmação de Presença */}
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle>Confirmação de Presença</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Configuração */}
-              <div className="space-y-6">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Introdução
-                        <span className="text-muted-foreground ml-2 text-sm font-normal">
-                          (será exibida antes da lista de nomes)
-                        </span>
-                      </label>
-                      <Textarea
-                        value={template.introduction}
-                        onChange={(e) =>
-                          setTemplate((prev) => ({
-                            ...prev,
-                            introduction: e.target.value,
-                          }))
-                        }
-                        placeholder="Ex: Olá! Confirmamos sua presença e de seus acompanhantes para nosso evento:"
-                        className="min-h-[100px] resize-none"
-                      />
+                {/* Preview */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">
+                      Preview da Mensagem
+                    </h3>
+                    <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[300px] text-sm">
+                      {simpleMessage}
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Conclusão
-                        <span className="text-muted-foreground ml-2 text-sm font-normal">
-                          (será exibida após a lista de nomes)
-                        </span>
-                      </label>
-                      <Textarea
-                        value={template.conclusion}
-                        onChange={(e) =>
-                          setTemplate((prev) => ({
-                            ...prev,
-                            conclusion: e.target.value,
-                          }))
-                        }
-                        placeholder="Será um prazer tê-los conosco nesse dia tão especial!"
-                        className="min-h-[100px] resize-none"
-                      />
-                    </div>
-
-                    <div className="flex justify-start">
-                      <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Salvando...
-                          </>
-                        ) : (
-                          "Salvar Template"
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Preview */}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">
-                    Preview da Mensagem
-                  </h3>
-                  <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[300px] text-sm">
-                    {generatePreview()}
                   </div>
+
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="gap-2 w-full"
+                    onClick={handleSimpleMessageSendClick}
+                    disabled={isSimpleMessageSending}
+                  >
+                    {isSimpleMessageSending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    {isSimpleMessageSending
+                      ? "Enviando..."
+                      : "Enviar Mensagens"}
+                  </Button>
                 </div>
-
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="gap-2 w-full"
-                  onClick={handleSendClick}
-                  disabled={isSending}
-                >
-                  {isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  {isSending ? "Enviando..." : "Enviar Mensagens"}
-                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Mensagem Simples */}
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle>Mensagem Simples</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Configuração */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Mensagem
-                  <span className="text-muted-foreground ml-2 text-sm font-normal">
-                    (será enviada para todos os convidados)
-                  </span>
-                </label>
-                <Textarea
-                  value={simpleMessage}
-                  onChange={(e) => setSimpleMessage(e.target.value)}
-                  placeholder="Digite aqui a mensagem que será enviada para todos os convidados..."
-                  className="min-h-[300px]"
-                />
-              </div>
-
-              {/* Preview */}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">
-                    Preview da Mensagem
-                  </h3>
-                  <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[300px] text-sm">
-                    {simpleMessage}
-                  </div>
-                </div>
-
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="gap-2 w-full"
-                  onClick={handleSimpleMessageSendClick}
-                  disabled={isSimpleMessageSending}
-                >
-                  {isSimpleMessageSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  {isSimpleMessageSending ? "Enviando..." : "Enviar Mensagens"}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
