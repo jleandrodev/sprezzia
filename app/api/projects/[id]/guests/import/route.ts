@@ -51,36 +51,39 @@ export async function POST(
         criancas_7_10,
       ] = line.split(",").map((item) => item.trim());
 
-      // Validar status
-      if (!Object.values(GuestStatus).includes(status as GuestStatus)) {
-        throw new Error(`Status inválido para o convidado ${name}: ${status}`);
-      }
+      // Se o status não for fornecido ou for inválido, usar PENDENTE
+      const guestStatus =
+        status && Object.values(GuestStatus).includes(status as GuestStatus)
+          ? (status as GuestStatus)
+          : "PENDENTE";
 
       // Preparar acompanhantes
       const companions = [];
-      if (acompanhantes && status_acompanhantes) {
-        const nomes = acompanhantes.split("|");
-        const statusList = status_acompanhantes.split("|");
+      if (acompanhantes) {
+        const nomes = acompanhantes.split(";");
+        const statusList = status_acompanhantes
+          ? status_acompanhantes.split(";")
+          : Array(nomes.length).fill("PENDENTE");
 
-        if (nomes.length !== statusList.length) {
-          throw new Error(
-            `Número de status não corresponde ao número de acompanhantes para ${name}`
-          );
+        // Se houver menos status que acompanhantes, preencher o restante com PENDENTE
+        while (statusList.length < nomes.length) {
+          statusList.push("PENDENTE");
         }
 
         for (let i = 0; i < nomes.length; i++) {
-          if (
-            !Object.values(GuestStatus).includes(statusList[i] as GuestStatus)
-          ) {
-            throw new Error(
-              `Status inválido para o acompanhante ${nomes[i]}: ${statusList[i]}`
-            );
-          }
+          const companionName = nomes[i].trim();
+          if (companionName) {
+            const companionStatus = Object.values(GuestStatus).includes(
+              statusList[i] as GuestStatus
+            )
+              ? (statusList[i] as GuestStatus)
+              : "PENDENTE";
 
-          companions.push({
-            name: nomes[i],
-            status: statusList[i] as GuestStatus,
-          });
+            companions.push({
+              name: companionName,
+              status: companionStatus,
+            });
+          }
         }
       }
 
@@ -90,7 +93,7 @@ export async function POST(
           data: {
             name,
             phone: phone || null,
-            status: status as GuestStatus,
+            status: guestStatus,
             children_0_6: parseInt(criancas_0_6) || 0,
             children_7_10: parseInt(criancas_7_10) || 0,
             projectId: params.id,
