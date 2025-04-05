@@ -7,8 +7,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Busca apenas convidados que têm número de telefone
-    const guests = await prisma.guest.findMany({
+    // Busca todos os convidados com telefone
+    const allGuests = await prisma.guest.findMany({
       where: {
         projectId: params.id,
         NOT: {
@@ -20,7 +20,24 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({ guestsCount: guests.length });
+    // Busca apenas os convidados pendentes com telefone
+    const pendingGuests = await prisma.guest.findMany({
+      where: {
+        projectId: params.id,
+        NOT: {
+          phone: null,
+        },
+        status: "PENDENTE",
+      },
+      include: {
+        companions: true,
+      },
+    });
+
+    return NextResponse.json({
+      guestsCount: allGuests.length,
+      pendingGuestsCount: pendingGuests.length,
+    });
   } catch (error) {
     console.error("Erro ao buscar convidados:", error);
     return NextResponse.json(
@@ -35,16 +52,17 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { template } = await request.json();
+    const body = await request.json();
     const evolutionApi = new EvolutionApiService();
 
-    // Busca convidados com telefone e seus acompanhantes
+    // Busca convidados com base no público-alvo selecionado
     const guests = await prisma.guest.findMany({
       where: {
         projectId: params.id,
         NOT: {
           phone: null,
         },
+        ...(body.targetAudience === "pending" ? { status: "PENDENTE" } : {}),
       },
       include: {
         companions: true,
@@ -59,14 +77,19 @@ export async function POST(
 
     for (const guest of guests) {
       try {
-        // Monta a lista de nomes (convidado principal + acompanhantes)
-        const guestList = [
-          guest.name,
-          ...guest.companions.map((companion) => companion.name),
-        ];
+        let message: string;
 
-        // Monta a mensagem completa
-        const message = `${template.introduction}\n\n${guestList.join("\n")}\n\n${template.conclusion}`;
+        // Se for mensagem simples, usa o texto direto
+        if (body.simpleMessage) {
+          message = body.simpleMessage;
+        } else {
+          // Se for template de confirmação, monta a mensagem com a lista de nomes
+          const guestList = [
+            guest.name,
+            ...guest.companions.map((companion) => companion.name),
+          ];
+          message = `${body.template.introduction}\n\n${guestList.join("\n")}\n\n${body.template.conclusion}`;
+        }
 
         // Remove caracteres não numéricos do telefone
         const phone = guest.phone?.replace(/\D/g, "");
@@ -82,12 +105,27 @@ export async function POST(
           message,
         });
 
+        // Atualiza o status da mensagem para ENVIADA
+        await prisma.$executeRaw`
+          UPDATE guests 
+          SET "messageStatus" = 'ENVIADA' 
+          WHERE id = ${guest.id}
+        `;
+
         summary.successful++;
 
         // Adiciona um pequeno delay entre as mensagens
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
         console.error(`Erro ao enviar mensagem para ${guest.name}:`, error);
+
+        // Atualiza o status da mensagem para ERRO
+        await prisma.$executeRaw`
+          UPDATE guests 
+          SET "messageStatus" = 'ERRO' 
+          WHERE id = ${guest.id}
+        `;
+
         summary.failed++;
       }
     }
