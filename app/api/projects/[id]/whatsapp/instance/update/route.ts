@@ -13,13 +13,16 @@ export async function POST(
     }
 
     const evolutionApi = new EvolutionApiService();
-    const result = await evolutionApi.updateInstance(params.id);
+    const instance = await evolutionApi.updateInstance(params.id);
 
-    return NextResponse.json(result);
+    return NextResponse.json(instance);
   } catch (error) {
     console.error("[WHATSAPP_INSTANCE_UPDATE]", error);
     return NextResponse.json(
-      { error: "Erro ao atualizar instância" },
+      {
+        error: "Erro ao atualizar instância",
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+      },
       { status: 500 }
     );
   }

@@ -101,7 +101,7 @@ export async function POST(
 
         // Envia a mensagem
         await evolutionApi.sendMessage({
-          phone,
+          phoneNumber: phone,
           message,
         });
 
