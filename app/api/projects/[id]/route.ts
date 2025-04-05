@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { ProjectService } from "@/services/project.service";
 import { auth } from "@clerk/nextjs/server";
-import { writeFile } from "fs/promises";
-import { join } from "path";
 
 export async function PATCH(
   req: Request,
@@ -22,18 +20,22 @@ export async function PATCH(
     const budget = formData.get("budget") as string;
     const image = formData.get("image") as File | null;
 
-    let imageUrl = null;
+    let imageBase64 = null;
 
     if (image) {
+      // Verifica o tamanho da imagem (limite de 5MB)
+      if (image.size > 5 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: "A imagem deve ter no máximo 5MB" },
+          { status: 400 }
+        );
+      }
+
+      // Converte a imagem para Base64
       const bytes = await image.arrayBuffer();
       const buffer = Buffer.from(bytes);
-
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const filename = `${uniqueSuffix}-${image.name}`;
-      const path = join(process.cwd(), "public/uploads", filename);
-
-      await writeFile(path, buffer);
-      imageUrl = `/uploads/${filename}`;
+      const base64 = buffer.toString("base64");
+      imageBase64 = `data:${image.type};base64,${base64}`;
     }
 
     const project = await ProjectService.update(params.id, {
@@ -42,7 +44,7 @@ export async function PATCH(
       date: date ? new Date(date) : null,
       type,
       budget: budget ? parseFloat(budget) : undefined,
-      image: imageUrl || undefined,
+      image: imageBase64 || undefined,
     });
 
     if (!project) {
