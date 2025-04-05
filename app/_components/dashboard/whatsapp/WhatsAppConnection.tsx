@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/app/_components/ui/button";
 import {
   Dialog,
@@ -26,7 +26,7 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
 
-  const fetchInstance = async () => {
+  const fetchInstance = useCallback(async () => {
     try {
       const response = await fetch(
         `/api/projects/${projectId}/whatsapp/instance`
@@ -37,11 +37,11 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
       console.error("Error fetching instance:", error);
       setInstance(null);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     fetchInstance();
-  }, [projectId]);
+  }, [fetchInstance]);
 
   const handleConnect = async () => {
     setIsLoading(true);
