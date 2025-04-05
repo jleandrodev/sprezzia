@@ -59,7 +59,7 @@ export default function ProjectCardsList() {
           <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
             <ProjectCard
               id={project.id}
-              image={project.image || "/placeholder.svg"}
+              image={project.image}
               title={project.name}
               description={project.description || ""}
             />
