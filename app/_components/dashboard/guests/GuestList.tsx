@@ -53,7 +53,7 @@ interface GuestListProps {
 
 export function GuestList({ projectId }: GuestListProps) {
   const { guests, isLoading, fetchGuests } = useGuests(projectId);
-  const { project } = useProject();
+  const { projectName } = useProject();
   const { toast } = useToast();
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     phone: true,
@@ -61,8 +61,6 @@ export function GuestList({ projectId }: GuestListProps) {
     messageStatus: true,
     observations: true,
   });
-
-  const projectName = project?.name;
 
   useEffect(() => {
     fetchGuests();
