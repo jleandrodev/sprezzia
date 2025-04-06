@@ -51,7 +51,7 @@ const formSchema = z.object({
     .default([]),
   children_0_6: z.number().min(0).default(0),
   children_7_10: z.number().min(0).default(0),
-  observations: z.string().optional(),
+  observations: z.string().nullable().default(null),
 });
 
 type FormValues = z.infer<typeof formSchema>;
