@@ -35,6 +35,7 @@ interface Guest {
   companions: Companion[];
   children_0_6: number;
   children_7_10: number;
+  observations?: string;
 }
 
 interface Project {
@@ -75,9 +76,9 @@ export default function PublicGuestList({
   const [isLoading, setIsLoading] = useState(true);
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     phone: true,
-    status: true,
     companions: true,
     messageStatus: true,
+    observations: true,
   });
 
   useEffect(() => {
@@ -108,7 +109,10 @@ export default function PublicGuestList({
     // Carrega as configurações salvas
     const savedSettings = localStorage.getItem(`guestList-${params.id}`);
     if (savedSettings) {
-      setColumnVisibility(JSON.parse(savedSettings));
+      const settings = JSON.parse(savedSettings);
+      // Remove o status das configurações antigas se existir
+      const { status, ...rest } = settings;
+      setColumnVisibility(rest);
     }
 
     fetchData();
@@ -125,25 +129,12 @@ export default function PublicGuestList({
   const getStatusStyle = (status: Guest["status"]) => {
     switch (status) {
       case "CONFIRMADO_PRESENCA":
-        return "bg-green-100 text-green-800 hover:bg-green-100/80";
+        return "bg-green-100 text-green-800 border-green-300";
       case "CONFIRMADO_AUSENCIA":
-        return "bg-red-100 text-red-800 hover:bg-red-100/80";
+        return "bg-red-100 text-red-800 border-red-300";
       default:
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100/80";
+        return "bg-blue-100 text-blue-800 border-blue-300 px-3 py-1 rounded-md"; // Estilo para pendentes
     }
-  };
-
-  const getStatusBadge = (status: Guest["status"]) => {
-    const style = getStatusStyle(status);
-    return (
-      <Badge className={style}>
-        {status === "CONFIRMADO_PRESENCA"
-          ? "Confirmado Presença"
-          : status === "CONFIRMADO_AUSENCIA"
-            ? "Confirmado Ausência"
-            : "Pendente"}
-      </Badge>
-    );
   };
 
   const getMessageStatusBadge = (status: Guest["messageStatus"]) => {
@@ -218,6 +209,25 @@ export default function PublicGuestList({
             </Button>
           </div>
 
+          {/* Legenda de cores */}
+          <div className="flex gap-4 items-center p-4 bg-muted/50 rounded-lg">
+            <span className="text-sm font-medium">Status:</span>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-100 border border-green-300" />
+                <span className="text-sm">Confirmado Presença</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-100 border border-red-300" />
+                <span className="text-sm">Confirmado Ausência</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-300" />
+                <span className="text-sm">Pendente</span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print-break-inside-avoid">
             <Card>
               <CardHeader className="pb-2">
@@ -270,12 +280,14 @@ export default function PublicGuestList({
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   {columnVisibility.phone && <TableHead>Telefone</TableHead>}
-                  {columnVisibility.status && <TableHead>Status</TableHead>}
                   {columnVisibility.companions && (
                     <TableHead>Acompanhantes</TableHead>
                   )}
                   {columnVisibility.messageStatus && (
                     <TableHead>Status da Mensagem</TableHead>
+                  )}
+                  {columnVisibility.observations && (
+                    <TableHead>Observações</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
@@ -294,9 +306,24 @@ export default function PublicGuestList({
                   </TableRow>
                 ) : (
                   guests.map((guest) => (
-                    <TableRow key={guest.id}>
+                    <TableRow
+                      key={guest.id}
+                      className={
+                        guest.status !== "PENDENTE"
+                          ? getStatusStyle(guest.status)
+                          : ""
+                      }
+                    >
                       <TableCell className="font-medium">
-                        {guest.name}
+                        <span
+                          className={
+                            guest.status === "PENDENTE"
+                              ? getStatusStyle(guest.status)
+                              : ""
+                          }
+                        >
+                          {guest.name}
+                        </span>
                       </TableCell>
                       {columnVisibility.phone && (
                         <TableCell>
@@ -307,9 +334,6 @@ export default function PublicGuestList({
                           )}
                         </TableCell>
                       )}
-                      {columnVisibility.status && (
-                        <TableCell>{getStatusBadge(guest.status)}</TableCell>
-                      )}
                       {columnVisibility.companions && (
                         <TableCell>
                           {guest.companions.length > 0 ? (
@@ -319,12 +343,12 @@ export default function PublicGuestList({
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {guest.companions.map((companion) => (
-                                  <Badge
+                                  <span
                                     key={companion.id}
                                     className={getStatusStyle(companion.status)}
                                   >
                                     {companion.name}
-                                  </Badge>
+                                  </span>
                                 ))}
                               </div>
                             </div>
@@ -338,6 +362,15 @@ export default function PublicGuestList({
                       {columnVisibility.messageStatus && (
                         <TableCell>
                           {getMessageStatusBadge(guest.messageStatus)}
+                        </TableCell>
+                      )}
+                      {columnVisibility.observations && (
+                        <TableCell>
+                          {guest.observations || (
+                            <span className="text-muted-foreground text-sm">
+                              Sem observações
+                            </span>
+                          )}
                         </TableCell>
                       )}
                     </TableRow>

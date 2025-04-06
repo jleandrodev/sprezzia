@@ -24,16 +24,16 @@ interface GuestListSettingsProps {
 
 export interface ColumnVisibility {
   phone: boolean;
-  status: boolean;
   companions: boolean;
   messageStatus: boolean;
+  observations: boolean;
 }
 
 const defaultVisibility: ColumnVisibility = {
   phone: true,
-  status: true,
   companions: true,
   messageStatus: true,
+  observations: true,
 };
 
 export function GuestListSettings({
@@ -107,14 +107,6 @@ export function GuestListSettings({
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="status">Status</Label>
-            <Switch
-              id="status"
-              checked={tempVisibility.status}
-              onCheckedChange={() => handleToggle("status")}
-            />
-          </div>
-          <div className="flex items-center justify-between">
             <Label htmlFor="companions">Acompanhantes</Label>
             <Switch
               id="companions"
@@ -128,6 +120,14 @@ export function GuestListSettings({
               id="messageStatus"
               checked={tempVisibility.messageStatus}
               onCheckedChange={() => handleToggle("messageStatus")}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="observations">Observações</Label>
+            <Switch
+              id="observations"
+              checked={tempVisibility.observations}
+              onCheckedChange={() => handleToggle("observations")}
             />
           </div>
           <div className="text-sm text-muted-foreground mt-4">

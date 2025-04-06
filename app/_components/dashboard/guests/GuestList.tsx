@@ -44,6 +44,7 @@ interface Guest {
   companions: Companion[];
   children_0_6: number;
   children_7_10: number;
+  observations?: string;
 }
 
 interface GuestListProps {
@@ -52,18 +53,20 @@ interface GuestListProps {
 
 export function GuestList({ projectId }: GuestListProps) {
   const { guests, isLoading, fetchGuests } = useGuests(projectId);
+  const { project } = useProject();
   const { toast } = useToast();
-  const { projectName } = useProject();
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     phone: true,
-    status: true,
     companions: true,
     messageStatus: true,
+    observations: true,
   });
+
+  const projectName = project?.name;
 
   useEffect(() => {
     fetchGuests();
-  }, [fetchGuests, projectId]);
+  }, [fetchGuests]);
 
   useEffect(() => {
     // Carrega as configurações salvas
@@ -166,11 +169,11 @@ export function GuestList({ projectId }: GuestListProps) {
   const getStatusStyle = (status: Guest["status"]) => {
     switch (status) {
       case "CONFIRMADO_PRESENCA":
-        return "bg-green-100 text-green-800 hover:bg-green-100/80";
+        return "bg-green-100 text-green-800 border-green-300";
       case "CONFIRMADO_AUSENCIA":
-        return "bg-red-100 text-red-800 hover:bg-red-100/80";
+        return "bg-red-100 text-red-800 border-red-300";
       default:
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100/80";
+        return "bg-blue-100 text-blue-800 border-blue-300 px-3 py-1 rounded-md"; // Estilo para pendentes
     }
   };
 
@@ -255,6 +258,25 @@ export function GuestList({ projectId }: GuestListProps) {
         </div>
       </div>
 
+      {/* Legenda de cores */}
+      <div className="flex gap-4 items-center p-4 bg-muted/50 rounded-lg">
+        <span className="text-sm font-medium">Status:</span>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-100 border border-green-300" />
+            <span className="text-sm">Confirmado Presença</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-100 border border-red-300" />
+            <span className="text-sm">Confirmado Ausência</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-300" />
+            <span className="text-sm">Pendente</span>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -307,12 +329,14 @@ export function GuestList({ projectId }: GuestListProps) {
             <TableRow>
               <TableHead>Nome</TableHead>
               {columnVisibility.phone && <TableHead>Telefone</TableHead>}
-              {columnVisibility.status && <TableHead>Status</TableHead>}
               {columnVisibility.companions && (
                 <TableHead>Acompanhantes</TableHead>
               )}
               {columnVisibility.messageStatus && (
                 <TableHead>Status da Mensagem</TableHead>
+              )}
+              {columnVisibility.observations && (
+                <TableHead>Observações</TableHead>
               )}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -331,13 +355,27 @@ export function GuestList({ projectId }: GuestListProps) {
               </TableRow>
             ) : (
               guests.map((guest) => (
-                <TableRow key={guest.id}>
-                  <TableCell className="font-medium">{guest.name}</TableCell>
+                <TableRow
+                  key={guest.id}
+                  className={
+                    guest.status !== "PENDENTE"
+                      ? getStatusStyle(guest.status)
+                      : ""
+                  }
+                >
+                  <TableCell className="font-medium">
+                    <span
+                      className={
+                        guest.status === "PENDENTE"
+                          ? getStatusStyle(guest.status)
+                          : ""
+                      }
+                    >
+                      {guest.name}
+                    </span>
+                  </TableCell>
                   {columnVisibility.phone && (
                     <TableCell>{guest.phone}</TableCell>
-                  )}
-                  {columnVisibility.status && (
-                    <TableCell>{getStatusBadge(guest.status)}</TableCell>
                   )}
                   {columnVisibility.companions && (
                     <TableCell>
@@ -348,12 +386,12 @@ export function GuestList({ projectId }: GuestListProps) {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {guest.companions.map((companion) => (
-                              <Badge
+                              <span
                                 key={companion.id}
                                 className={getStatusStyle(companion.status)}
                               >
                                 {companion.name}
-                              </Badge>
+                              </span>
                             ))}
                           </div>
                         </div>
@@ -367,6 +405,15 @@ export function GuestList({ projectId }: GuestListProps) {
                   {columnVisibility.messageStatus && (
                     <TableCell>
                       {getMessageStatusBadge(guest.messageStatus)}
+                    </TableCell>
+                  )}
+                  {columnVisibility.observations && (
+                    <TableCell>
+                      {guest.observations || (
+                        <span className="text-muted-foreground text-sm">
+                          Sem observações
+                        </span>
+                      )}
                     </TableCell>
                   )}
                   <TableCell className="text-right space-x-2">
