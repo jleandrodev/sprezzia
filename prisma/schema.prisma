@@ -94,7 +94,7 @@ model Document {
 model WhatsAppConfig {
   id          String   @id @default(uuid())
   projectId   String   @unique
-  project     Project  @relation(fields: [projectId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   introduction String  @db.Text
   conclusion   String  @db.Text
   createdAt   DateTime @default(now())
