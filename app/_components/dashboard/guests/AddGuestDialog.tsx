@@ -51,7 +51,7 @@ const formSchema = z.object({
     .default([]),
   children_0_6: z.number().min(0).default(0),
   children_7_10: z.number().min(0).default(0),
-  observations: z.string().nullable().default(null),
+  observations: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,6 +63,7 @@ const defaultValues: Partial<FormValues> = {
   companions: [],
   children_0_6: 0,
   children_7_10: 0,
+  observations: "",
 };
 
 interface AddGuestDialogProps {
@@ -212,6 +213,7 @@ export default function AddGuestDialog({
                           placeholder="Observações sobre o convidado"
                           className="resize-none"
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />

@@ -54,7 +54,7 @@ const formSchema = z.object({
     .default([]),
   children_0_6: z.coerce.number().min(0),
   children_7_10: z.coerce.number().min(0),
-  observations: z.string().nullable(),
+  observations: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -84,7 +84,7 @@ export default function EditGuestDialog({
       companions: guest.companions,
       children_0_6: guest.children_0_6,
       children_7_10: guest.children_7_10,
-      observations: guest.observations,
+      observations: guest.observations || "",
     },
   });
 
@@ -159,7 +159,7 @@ export default function EditGuestDialog({
         companions: guest.companions,
         children_0_6: guest.children_0_6,
         children_7_10: guest.children_7_10,
-        observations: guest.observations,
+        observations: guest.observations || "",
       });
     }
   }, [open, guest, form]);
@@ -426,6 +426,7 @@ export default function EditGuestDialog({
                           placeholder="Observações sobre o convidado"
                           className="resize-none"
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
