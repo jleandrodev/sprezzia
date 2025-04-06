@@ -13,7 +13,9 @@ export async function POST(
     }
 
     const evolutionApi = new EvolutionApiService();
-    const result = await evolutionApi.createInstance(params.id);
+    const result = await evolutionApi.createInstance({
+      number: params.id,
+    });
 
     return NextResponse.json(result);
   } catch (error) {
