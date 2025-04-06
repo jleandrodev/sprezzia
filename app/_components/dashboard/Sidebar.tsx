@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Settings,
   Users,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/app/_lib/utils";
 import { Badge } from "@/app/_components/ui/badge";
@@ -29,7 +30,8 @@ interface SidebarLinkProps {
 
 function SidebarLink({ href, icon, label, disabled }: SidebarLinkProps) {
   const pathname = usePathname();
-  const isActive = href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  const isActive =
+    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
   const LinkComponent = disabled ? "div" : Link;
 
@@ -107,16 +109,26 @@ export function Sidebar() {
   ];
 
   return (
-    <div className="flex h-full flex-col gap-4 py-4">
+    <div className="flex h-full flex-col justify-between py-4">
       <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-          Menu
-        </h2>
+        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Menu</h2>
         <div className="space-y-1">
           {links.map((link, i) => (
             <SidebarLink key={i} {...link} />
           ))}
         </div>
+      </div>
+
+      <div className="px-3 py-2 border-t">
+        <a
+          href="https://forms.gle/62Br5qinm5T9gfzX8"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <LifeBuoy className="h-5 w-5" />
+          <span>Solicitar Suporte</span>
+        </a>
       </div>
     </div>
   );

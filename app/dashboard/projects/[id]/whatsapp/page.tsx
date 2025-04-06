@@ -22,6 +22,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/_components/ui/dialog";
+import { WhatsAppConnection } from "@/app/_components/dashboard/whatsapp/WhatsAppConnection";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/_components/ui/select";
+import { Label } from "@/app/_components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/app/_components/ui/radio-group";
 
 interface MessageTemplate {
   introduction: string;
@@ -34,8 +44,13 @@ interface Guest {
   companions: { name: string }[];
 }
 
-export default function WhatsAppPage() {
-  const params = useParams();
+interface WhatsAppPageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function WhatsAppPage({ params }: WhatsAppPageProps) {
   const { projectName } = useProject();
   const { toast } = useToast();
   const [template, setTemplate] = useState<MessageTemplate>({
@@ -47,6 +62,14 @@ export default function WhatsAppPage() {
   const [isSending, setIsSending] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [guestsCount, setGuestsCount] = useState(0);
+  const [simpleMessage, setSimpleMessage] = useState("");
+  const [isSimpleMessageSending, setIsSimpleMessageSending] = useState(false);
+  const [showSimpleMessageConfirmDialog, setShowSimpleMessageConfirmDialog] =
+    useState(false);
+  const [targetAudience, setTargetAudience] = useState<"all" | "pending">(
+    "all"
+  );
+  const [pendingGuestsCount, setPendingGuestsCount] = useState(0);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -165,8 +188,9 @@ export default function WhatsAppPage() {
 
       if (!response.ok) throw new Error("Erro ao buscar convidados");
 
-      const { guestsCount } = await response.json();
+      const { guestsCount, pendingGuestsCount } = await response.json();
       setGuestsCount(guestsCount);
+      setPendingGuestsCount(pendingGuestsCount);
       setShowConfirmDialog(true);
     } catch (error) {
       console.error("Erro ao buscar convidados:", error);
@@ -182,18 +206,22 @@ export default function WhatsAppPage() {
     setIsSending(true);
 
     try {
-      const response = await fetch(`/api/projects/${params.id}/whatsapp/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          template: {
-            introduction: template.introduction,
-            conclusion: template.conclusion,
+      const response = await fetch(
+        `/api/projects/${params.id}/whatsapp/message`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      });
+          body: JSON.stringify({
+            template: {
+              introduction: template.introduction,
+              conclusion: template.conclusion,
+            },
+            targetAudience,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error("Erro ao enviar mensagens");
 
@@ -216,165 +244,355 @@ export default function WhatsAppPage() {
     }
   };
 
+  const handleSimpleMessageSendClick = async () => {
+    if (!simpleMessage.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem antes de enviar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${params.id}/whatsapp/send`, {
+        method: "GET",
+      });
+
+      if (!response.ok) throw new Error("Erro ao buscar convidados");
+
+      const { guestsCount, pendingGuestsCount } = await response.json();
+      setGuestsCount(guestsCount);
+      setPendingGuestsCount(pendingGuestsCount);
+      setShowSimpleMessageConfirmDialog(true);
+    } catch (error) {
+      console.error("Erro ao buscar convidados:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a lista de convidados",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSimpleMessageConfirmSend = async () => {
+    setShowSimpleMessageConfirmDialog(false);
+    setIsSimpleMessageSending(true);
+
+    try {
+      const response = await fetch(
+        `/api/projects/${params.id}/whatsapp/message`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            simpleMessage,
+            targetAudience,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Erro ao enviar mensagens");
+
+      const { summary } = await response.json();
+
+      toast({
+        title: "Envio concluído",
+        description: `✅ ${summary.successful} enviadas\n❌ ${summary.failed} falhas\n⚠️ ${summary.skipped} sem telefone`,
+      });
+
+      setSimpleMessage("");
+    } catch (error) {
+      console.error("Erro ao enviar mensagens:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar as mensagens",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSimpleMessageSending(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold">Disparo de Mensagens</h1>
-        <p className="text-muted-foreground">{projectName}</p>
+    <div className="container mx-auto py-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold">WhatsApp</h1>
+            <p className="text-muted-foreground">
+              Envie mensagens para seus convidados
+            </p>
+          </div>
+          <WhatsAppConnection projectId={params.id} />
+        </div>
+
+        <div className="grid grid-cols-1 gap-8">
+          {/* Confirmação de Presença */}
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>Confirmação de Presença</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuração */}
+                <div className="space-y-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Introdução
+                          <span className="text-muted-foreground ml-2 text-sm font-normal">
+                            (será exibida antes da lista de nomes)
+                          </span>
+                        </label>
+                        <Textarea
+                          value={template.introduction}
+                          onChange={(e) =>
+                            setTemplate((prev) => ({
+                              ...prev,
+                              introduction: e.target.value,
+                            }))
+                          }
+                          placeholder="Ex: Olá! Confirmamos sua presença e de seus acompanhantes para nosso evento:"
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Conclusão
+                          <span className="text-muted-foreground ml-2 text-sm font-normal">
+                            (será exibida após a lista de nomes)
+                          </span>
+                        </label>
+                        <Textarea
+                          value={template.conclusion}
+                          onChange={(e) =>
+                            setTemplate((prev) => ({
+                              ...prev,
+                              conclusion: e.target.value,
+                            }))
+                          }
+                          placeholder="Será um prazer tê-los conosco nesse dia tão especial!"
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-start">
+                        <Button onClick={handleSave} disabled={isSaving}>
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            "Salvar Template"
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Preview */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">
+                      Preview da Mensagem
+                    </h3>
+                    <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[300px] text-sm">
+                      {generatePreview()}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="gap-2 w-full"
+                    onClick={handleSendClick}
+                    disabled={isSending}
+                  >
+                    {isSending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    {isSending ? "Enviando..." : "Enviar Mensagens"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mensagem Simples */}
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>Mensagem Simples</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuração */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Mensagem
+                    <span className="text-muted-foreground ml-2 text-sm font-normal">
+                      (será enviada para os convidados selecionados)
+                    </span>
+                  </label>
+                  <Textarea
+                    value={simpleMessage}
+                    onChange={(e) => setSimpleMessage(e.target.value)}
+                    placeholder="Digite aqui a mensagem que será enviada para os convidados..."
+                    className="min-h-[300px]"
+                  />
+                </div>
+
+                {/* Preview */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">
+                      Preview da Mensagem
+                    </h3>
+                    <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[300px] text-sm">
+                      {simpleMessage}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="gap-2 w-full"
+                    onClick={handleSimpleMessageSendClick}
+                    disabled={isSimpleMessageSending}
+                  >
+                    {isSimpleMessageSending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    {isSimpleMessageSending
+                      ? "Enviando..."
+                      : "Enviar Mensagens"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
+      {/* Diálogo de confirmação para mensagem de confirmação */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Confirmar envio de mensagens
-            </DialogTitle>
-            <DialogDescription>
-              Você está prestes a enviar mensagens para {guestsCount}{" "}
-              convidado(s) que possuem número de telefone cadastrado.
-              <br />
-              <br />
-              Deseja prosseguir com o envio?
+            <DialogTitle>Confirmar envio</DialogTitle>
+            <DialogDescription className="space-y-4">
+              <div>Selecione o público-alvo para envio:</div>
+              <RadioGroup
+                value={targetAudience}
+                onValueChange={(value: "all" | "pending") =>
+                  setTargetAudience(value)
+                }
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="all" />
+                  <Label htmlFor="all">
+                    Todos os convidados ({guestsCount})
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pending" id="pending" />
+                  <Label htmlFor="pending">
+                    Apenas pendentes ({pendingGuestsCount})
+                  </Label>
+                </div>
+              </RadioGroup>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setShowConfirmDialog(false)}
-              disabled={isSending}
             >
               Cancelar
             </Button>
-            <Button
-              variant="default"
-              onClick={handleConfirmSend}
-              disabled={isSending}
-              className="gap-2"
-            >
+            <Button onClick={handleConfirmSend} disabled={isSending}>
               {isSending ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Enviando...
                 </>
               ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Confirmar Envio
-                </>
+                "Confirmar"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Formulário */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Template da Mensagem</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Introdução
-                    <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      (será exibida antes da lista de nomes)
-                    </span>
-                  </label>
-                  <Textarea
-                    value={template.introduction}
-                    onChange={(e) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        introduction: e.target.value,
-                      }))
-                    }
-                    placeholder="Ex: Olá! Confirmamos sua presença e de seus acompanhantes para nosso evento:"
-                    className="min-h-[100px] resize-none"
-                  />
+      {/* Diálogo de confirmação para mensagem simples */}
+      <Dialog
+        open={showSimpleMessageConfirmDialog}
+        onOpenChange={setShowSimpleMessageConfirmDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar envio</DialogTitle>
+            <DialogDescription className="space-y-4">
+              <div>Selecione o público-alvo para envio:</div>
+              <RadioGroup
+                value={targetAudience}
+                onValueChange={(value: "all" | "pending") =>
+                  setTargetAudience(value)
+                }
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="all-simple" />
+                  <Label htmlFor="all-simple">
+                    Todos os convidados ({guestsCount})
+                  </Label>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Conclusão
-                    <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      (será exibida após a lista de nomes)
-                    </span>
-                  </label>
-                  <Textarea
-                    value={template.conclusion}
-                    onChange={(e) =>
-                      setTemplate((prev) => ({
-                        ...prev,
-                        conclusion: e.target.value,
-                      }))
-                    }
-                    placeholder="Será um prazer tê-los conosco nesse dia tão especial!"
-                    className="min-h-[100px] resize-none"
-                  />
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pending" id="pending-simple" />
+                  <Label htmlFor="pending-simple">
+                    Apenas pendentes ({pendingGuestsCount})
+                  </Label>
                 </div>
-
-                <div className="flex justify-start">
-                  <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      "Salvar Template"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Preview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preview da Mensagem</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Exemplo de mensagem
-                <span className="text-muted-foreground ml-2 text-sm font-normal">
-                  (com convidado e acompanhantes)
-                </span>
-              </label>
-              <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap min-h-[200px] text-sm">
-                {generatePreview()}
-              </div>
-
-              <div className="flex justify-start pt-4">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="gap-2"
-                  onClick={handleSendClick}
-                  disabled={isSending}
-                >
-                  {isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  {isSending ? "Enviando..." : "Enviar Mensagens"}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </RadioGroup>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSimpleMessageConfirmDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSimpleMessageConfirmSend}
+              disabled={isSimpleMessageSending}
+            >
+              {isSimpleMessageSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                "Confirmar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

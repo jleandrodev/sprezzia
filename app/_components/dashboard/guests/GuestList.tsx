@@ -21,12 +21,13 @@ import {
 } from "@/app/_components/ui/card";
 import EditGuestDialog from "./EditGuestDialog";
 import DeleteGuestDialog from "./DeleteGuestDialog";
-import ImportGuestsDialog from "./ImportGuestsDialog";
 import AddGuestDialog from "./AddGuestDialog";
 import { useProject } from "@/app/_contexts/ProjectContext";
 import Link from "next/link";
-import { MessageSquare, Link2 } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useGuests } from "@/app/_hooks/use-guests";
+import { GuestListSettings, ColumnVisibility } from "./GuestListSettings";
+import { GuestListMenu } from "./GuestListMenu";
 
 interface Companion {
   id: string;
@@ -39,6 +40,7 @@ interface Guest {
   name: string;
   phone: string | null;
   status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
+  messageStatus: "NAO_ENVIADA" | "ENVIADA" | "ERRO";
   companions: Companion[];
   children_0_6: number;
   children_7_10: number;
@@ -52,10 +54,24 @@ export function GuestList({ projectId }: GuestListProps) {
   const { guests, isLoading, fetchGuests } = useGuests(projectId);
   const { toast } = useToast();
   const { projectName } = useProject();
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    phone: true,
+    status: true,
+    companions: true,
+    messageStatus: true,
+  });
 
   useEffect(() => {
     fetchGuests();
   }, [fetchGuests, projectId]);
+
+  useEffect(() => {
+    // Carrega as configurações salvas
+    const savedSettings = localStorage.getItem(`guestList-${projectId}`);
+    if (savedSettings) {
+      setColumnVisibility(JSON.parse(savedSettings));
+    }
+  }, [projectId]);
 
   const updateAllStatus = async (
     guestId: string,
@@ -171,6 +187,21 @@ export function GuestList({ projectId }: GuestListProps) {
     );
   };
 
+  const getMessageStatusBadge = (status: Guest["messageStatus"]) => {
+    switch (status) {
+      case "ENVIADA":
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            Mensagem Enviada
+          </Badge>
+        );
+      case "ERRO":
+        return <Badge className="bg-red-100 text-red-800">Erro de Envio</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Não Enviada</Badge>;
+    }
+  };
+
   // Calcula o total de convidados confirmados (incluindo acompanhantes)
   const getTotalConfirmed = () => {
     let total = 0;
@@ -215,16 +246,12 @@ export function GuestList({ projectId }: GuestListProps) {
           <p className="text-muted-foreground">{projectName}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={copyPublicLink}
-            className="hover:bg-blue-50 hover:cursor-pointer border-blue-500 text-blue-500 hover:text-blue-600 hover:border-blue-600"
-          >
-            <Link2 className="h-4 w-4 mr-2" />
-            Link Público
-          </Button>
           <AddGuestDialog projectId={projectId} onSuccess={fetchGuests} />
-          <ImportGuestsDialog projectId={projectId} onSuccess={fetchGuests} />
+          <GuestListMenu
+            projectId={projectId}
+            onImportSuccess={fetchGuests}
+            onSettingsChange={setColumnVisibility}
+          />
         </div>
       </div>
 
@@ -279,16 +306,26 @@ export function GuestList({ projectId }: GuestListProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Acompanhantes</TableHead>
+              {columnVisibility.phone && <TableHead>Telefone</TableHead>}
+              {columnVisibility.status && <TableHead>Status</TableHead>}
+              {columnVisibility.companions && (
+                <TableHead>Acompanhantes</TableHead>
+              )}
+              {columnVisibility.messageStatus && (
+                <TableHead>Status da Mensagem</TableHead>
+              )}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {guests.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell
+                  colSpan={
+                    2 + Object.values(columnVisibility).filter(Boolean).length
+                  }
+                  className="text-center"
+                >
                   Nenhum convidado cadastrado
                 </TableCell>
               </TableRow>
@@ -296,31 +333,42 @@ export function GuestList({ projectId }: GuestListProps) {
               guests.map((guest) => (
                 <TableRow key={guest.id}>
                   <TableCell className="font-medium">{guest.name}</TableCell>
-                  <TableCell>{guest.phone}</TableCell>
-                  <TableCell>{getStatusBadge(guest.status)}</TableCell>
-                  <TableCell>
-                    {guest.companions.length > 0 ? (
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">
-                          {guest.companions.length} acompanhante(s)
+                  {columnVisibility.phone && (
+                    <TableCell>{guest.phone}</TableCell>
+                  )}
+                  {columnVisibility.status && (
+                    <TableCell>{getStatusBadge(guest.status)}</TableCell>
+                  )}
+                  {columnVisibility.companions && (
+                    <TableCell>
+                      {guest.companions.length > 0 ? (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium">
+                            {guest.companions.length} acompanhante(s)
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {guest.companions.map((companion) => (
+                              <Badge
+                                key={companion.id}
+                                className={getStatusStyle(companion.status)}
+                              >
+                                {companion.name}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {guest.companions.map((companion) => (
-                            <Badge
-                              key={companion.id}
-                              className={getStatusStyle(companion.status)}
-                            >
-                              {companion.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        Sem acompanhantes
-                      </span>
-                    )}
-                  </TableCell>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">
+                          Sem acompanhantes
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
+                  {columnVisibility.messageStatus && (
+                    <TableCell>
+                      {getMessageStatusBadge(guest.messageStatus)}
+                    </TableCell>
+                  )}
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"

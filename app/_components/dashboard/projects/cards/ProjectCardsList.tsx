@@ -6,6 +6,7 @@ import AddProjectCard from "./AddProjectCard";
 import { ProjectCard } from "./ProjectCard";
 import { useToast } from "@/app/_hooks/use-toast";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 
 interface Project {
   id: string;
@@ -24,27 +25,61 @@ export default function ProjectCardsList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { isLoaded, isSignedIn } = useAuth();
 
   const fetchProjects = useCallback(async () => {
     try {
+      if (!isLoaded || !isSignedIn) {
+        console.log("[ProjectCardsList] Usuário não autenticado");
+        return;
+      }
+
       const response = await fetch("/api/projects?workspaceId=default");
-      if (!response.ok) throw new Error("Erro ao carregar projetos");
-      const data = await response.json();
+
+      // Log da resposta completa para debug
+      console.log("[ProjectCardsList] Status:", response.status);
+      console.log(
+        "[ProjectCardsList] Headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
+      const responseText = await response.text();
+      console.log("[ProjectCardsList] Response text:", responseText);
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${responseText}`);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("[ProjectCardsList] Erro ao fazer parse do JSON:", e);
+        throw new Error("A resposta do servidor não é um JSON válido");
+      }
+
+      console.log("[ProjectCardsList] Projetos carregados:", data.length);
       setProjects(data);
     } catch (error) {
+      console.error("[ProjectCardsList] Erro completo:", error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os projetos.",
+        title: "Erro ao carregar projetos",
+        description:
+          error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [isLoaded, isSignedIn, toast]);
 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  if (!isLoaded || !isSignedIn) {
+    return null;
+  }
 
   if (isLoading) {
     return <div>Carregando...</div>;
@@ -65,6 +100,12 @@ export default function ProjectCardsList() {
             />
           </Link>
         ))}
+
+        {projects.length === 0 && !isLoading && (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            Nenhum projeto encontrado
+          </div>
+        )}
       </div>
 
       <AddProjectDialog

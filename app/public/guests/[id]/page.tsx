@@ -18,6 +18,7 @@ import {
 } from "@/app/_components/ui/card";
 import { Download } from "lucide-react";
 import { Button } from "@/app/_components/ui/button";
+import type { ColumnVisibility } from "@/app/_components/dashboard/guests/GuestListSettings";
 
 interface Companion {
   id: string;
@@ -30,6 +31,7 @@ interface Guest {
   name: string;
   phone: string | null;
   status: "PENDENTE" | "CONFIRMADO_PRESENCA" | "CONFIRMADO_AUSENCIA";
+  messageStatus: "NAO_ENVIADA" | "ENVIADA" | "ERRO";
   companions: Companion[];
   children_0_6: number;
   children_7_10: number;
@@ -71,6 +73,12 @@ export default function PublicGuestList({
   const [guests, setGuests] = useState<Guest[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    phone: true,
+    status: true,
+    companions: true,
+    messageStatus: true,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,6 +104,12 @@ export default function PublicGuestList({
         setIsLoading(false);
       }
     };
+
+    // Carrega as configurações salvas
+    const savedSettings = localStorage.getItem(`guestList-${params.id}`);
+    if (savedSettings) {
+      setColumnVisibility(JSON.parse(savedSettings));
+    }
 
     fetchData();
   }, [params.id]);
@@ -130,6 +144,21 @@ export default function PublicGuestList({
             : "Pendente"}
       </Badge>
     );
+  };
+
+  const getMessageStatusBadge = (status: Guest["messageStatus"]) => {
+    switch (status) {
+      case "ENVIADA":
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            Mensagem Enviada
+          </Badge>
+        );
+      case "ERRO":
+        return <Badge className="bg-red-100 text-red-800">Erro de Envio</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">Não Enviada</Badge>;
+    }
   };
 
   // Calcula o total de convidados confirmados (incluindo acompanhantes)
@@ -240,15 +269,26 @@ export default function PublicGuestList({
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Acompanhantes</TableHead>
+                  {columnVisibility.phone && <TableHead>Telefone</TableHead>}
+                  {columnVisibility.status && <TableHead>Status</TableHead>}
+                  {columnVisibility.companions && (
+                    <TableHead>Acompanhantes</TableHead>
+                  )}
+                  {columnVisibility.messageStatus && (
+                    <TableHead>Status da Mensagem</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {guests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
+                    <TableCell
+                      colSpan={
+                        1 +
+                        Object.values(columnVisibility).filter(Boolean).length
+                      }
+                      className="text-center"
+                    >
                       Nenhum convidado cadastrado
                     </TableCell>
                   </TableRow>
@@ -258,37 +298,48 @@ export default function PublicGuestList({
                       <TableCell className="font-medium">
                         {guest.name}
                       </TableCell>
-                      <TableCell>
-                        {guest.phone || (
-                          <span className="text-muted-foreground text-sm">
-                            Não informado
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(guest.status)}</TableCell>
-                      <TableCell>
-                        {guest.companions.length > 0 ? (
-                          <div className="space-y-2">
-                            <div className="text-sm font-medium">
-                              {guest.companions.length} acompanhante(s)
+                      {columnVisibility.phone && (
+                        <TableCell>
+                          {guest.phone || (
+                            <span className="text-muted-foreground text-sm">
+                              Não informado
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
+                      {columnVisibility.status && (
+                        <TableCell>{getStatusBadge(guest.status)}</TableCell>
+                      )}
+                      {columnVisibility.companions && (
+                        <TableCell>
+                          {guest.companions.length > 0 ? (
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium">
+                                {guest.companions.length} acompanhante(s)
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {guest.companions.map((companion) => (
+                                  <Badge
+                                    key={companion.id}
+                                    className={getStatusStyle(companion.status)}
+                                  >
+                                    {companion.name}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {guest.companions.map((companion) => (
-                                <Badge
-                                  key={companion.id}
-                                  className={getStatusStyle(companion.status)}
-                                >
-                                  {companion.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">
-                            Sem acompanhantes
-                          </span>
-                        )}
-                      </TableCell>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              Sem acompanhantes
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
+                      {columnVisibility.messageStatus && (
+                        <TableCell>
+                          {getMessageStatusBadge(guest.messageStatus)}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}

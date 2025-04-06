@@ -16,6 +16,12 @@ enum GuestStatus {
   CONFIRMADO_AUSENCIA
 }
 
+enum MessageStatus {
+  NAO_ENVIADA
+  ENVIADA
+  ERRO
+}
+
 model Project {
   id          String    @id @default(uuid())
   name        String
@@ -32,6 +38,7 @@ model Project {
   guests      Guest[]
   documents   Document[]
   whatsappConfigs WhatsAppConfig[]
+  guestListSettings GuestListSettings?
 
   @@index([userId])
   @@index([workspaceId])
@@ -43,6 +50,7 @@ model Guest {
   name          String
   phone         String?     // Número de telefone do convidado
   status        String      @default("PENDENTE")
+  messageStatus MessageStatus @default(NAO_ENVIADA)
   children_0_6  Int        @default(0)
   children_7_10 Int        @default(0)
   projectId     String
@@ -93,4 +101,18 @@ model WhatsAppConfig {
   updatedAt   DateTime @updatedAt
 
   @@map("whatsapp_configs")
+}
+
+model GuestListSettings {
+  id            String   @id @default(uuid())
+  projectId     String   @unique
+  project       Project  @relation(fields: [projectId], references: [id])
+  showPhone     Boolean  @default(true)
+  showStatus    Boolean  @default(true)
+  showCompanions Boolean @default(true)
+  showMessageStatus Boolean @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("guest_list_settings")
 }
