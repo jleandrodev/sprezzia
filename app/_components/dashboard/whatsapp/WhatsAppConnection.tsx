@@ -93,15 +93,39 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
     try {
       setIsLoading(true);
 
-      // Primeiro criamos a instância
-      await service.createInstance({
+      // 1. Faz logout da instância atual
+      console.log("[WhatsAppConnection] Fazendo logout da instância...");
+      try {
+        await service.logout();
+        console.log("[WhatsAppConnection] Logout realizado com sucesso");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.log(
+          "[WhatsAppConnection] Erro ao fazer logout, continuando...",
+          error
+        );
+      }
+
+      // 2. Deleta a instância atual
+      console.log("[WhatsAppConnection] Deletando instância...");
+      try {
+        await service.deleteInstance();
+        console.log("[WhatsAppConnection] Instância deletada com sucesso");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.log(
+          "[WhatsAppConnection] Erro ao deletar instância, continuando...",
+          error
+        );
+      }
+
+      // 3. Cria nova instância
+      console.log("[WhatsAppConnection] Criando nova instância...");
+      const instance = await service.createInstance({
         number: phoneNumber,
       });
 
-      // Depois conectamos para obter o QR code
-      const instance = await service.connectInstance();
-      console.log("[WhatsAppConnection] Conectando instância:", instance);
-
+      // 4. Mostra QR code para conexão
       if (instance.qrcode) {
         console.log("[WhatsAppConnection] QR Code recebido");
         setQrCode(instance.qrcode);
@@ -109,8 +133,8 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
         setShowQrInDialog(true);
 
         toast({
-          title: "Conectando ao WhatsApp",
-          description: "Escaneie o QR Code para conectar",
+          title: "Atualizando WhatsApp",
+          description: "Escaneie o QR Code para conectar o novo número",
         });
       } else {
         console.log("[WhatsAppConnection] QR Code não recebido");
@@ -121,11 +145,52 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
         });
       }
     } catch (error) {
-      console.error("[WhatsAppConnection] Erro ao conectar:", error);
+      console.error("[WhatsAppConnection] Erro ao atualizar número:", error);
       toast({
         variant: "destructive",
-        title: "Erro ao conectar",
-        description: "Não foi possível iniciar a conexão",
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar o número do WhatsApp",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    try {
+      setIsLoading(true);
+
+      // 1. Faz logout da instância
+      console.log("[WhatsAppConnection] Fazendo logout da instância...");
+      try {
+        await service.logout();
+        console.log("[WhatsAppConnection] Logout realizado com sucesso");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.log("[WhatsAppConnection] Erro ao fazer logout", error);
+      }
+
+      // 2. Deleta a instância
+      console.log("[WhatsAppConnection] Deletando instância...");
+      try {
+        await service.deleteInstance();
+        console.log("[WhatsAppConnection] Instância deletada com sucesso");
+      } catch (error) {
+        console.log("[WhatsAppConnection] Erro ao deletar instância", error);
+      }
+
+      // 3. Atualiza o estado
+      setInstanceState("DISCONNECTED");
+      toast({
+        title: "WhatsApp Desconectado",
+        description: "Seu WhatsApp foi desconectado com sucesso!",
+      });
+    } catch (error) {
+      console.error("[WhatsAppConnection] Erro ao desconectar:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao desconectar",
+        description: "Não foi possível desconectar o WhatsApp",
       });
     } finally {
       setIsLoading(false);
@@ -133,37 +198,8 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
   }
 
   async function handleConnect() {
-    if (instanceState !== "CONNECTED") {
-      setShowNumberDialog(true);
-      setShowQrInDialog(false);
-      return;
-    }
-
-    // Se já está conectado, tenta reconectar
-    try {
-      setIsLoading(true);
-      const instance = await service.connectInstance();
-
-      if (instance.qrcode) {
-        setQrCode(instance.qrcode);
-        setInstanceState("CONNECTING");
-        setShowQrInDialog(true);
-
-        toast({
-          title: "Reconectando ao WhatsApp",
-          description: "Escaneie o QR Code para reconectar",
-        });
-      }
-    } catch (error) {
-      console.error("[WhatsAppConnection] Erro ao reconectar:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao reconectar",
-        description: "Não foi possível reconectar ao WhatsApp",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setShowNumberDialog(true);
+    setShowQrInDialog(false);
   }
 
   function handleCloseDialog() {
@@ -195,19 +231,16 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
             <Button
               onClick={handleConnect}
               disabled={isLoading || instanceState === "CONNECTING"}
-              className={`gap-2 ${
-                instanceState === "CONNECTED"
-                  ? "bg-green-500 hover:bg-green-600"
-                  : ""
-              }`}
+              variant={instanceState === "CONNECTED" ? "default" : "outline"}
+              className="gap-2"
             >
               <MessageSquare
                 className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`}
               />
               {isLoading
-                ? "Conectando..."
+                ? "Processando..."
                 : instanceState === "CONNECTED"
-                  ? "Reconectar"
+                  ? "Atualizar Número"
                   : instanceState === "CONNECTING"
                     ? "Aguardando..."
                     : "Conectar"}

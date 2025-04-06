@@ -259,16 +259,18 @@ export class EvolutionApiService {
 
   async deleteInstance(): Promise<void> {
     try {
-      const response = await this.fetchApi(`/instance/delete`, {
-        method: "DELETE",
-        body: JSON.stringify({
-          instanceName: this.instanceName,
-        }),
-      });
+      const response = await this.fetchApi(
+        `/instance/delete/${this.instanceName}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Erro ao deletar instância: ${response.statusText}`);
       }
+
+      console.log("[EvolutionApiService] Instância deletada com sucesso");
     } catch (error) {
       console.error("[EvolutionApiService] Erro ao deletar instância:", error);
       throw error;
@@ -277,16 +279,18 @@ export class EvolutionApiService {
 
   async logout(): Promise<void> {
     try {
-      const response = await this.fetchApi(`/instance/logout`, {
-        method: "POST",
-        body: JSON.stringify({
-          instanceName: this.instanceName,
-        }),
-      });
+      const response = await this.fetchApi(
+        `/instance/logout/${this.instanceName}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Erro ao fazer logout: ${response.statusText}`);
       }
+
+      console.log("[EvolutionApiService] Logout realizado com sucesso");
     } catch (error) {
       console.error("[EvolutionApiService] Erro ao fazer logout:", error);
       throw error;
