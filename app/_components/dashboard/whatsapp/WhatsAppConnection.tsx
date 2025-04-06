@@ -25,22 +25,49 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
   const [qrCode, setQrCode] = useState<string>();
   const [instanceState, setInstanceState] = useState<string>("DISCONNECTED");
   const [showNumberDialog, setShowNumberDialog] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [showQrInDialog, setShowQrInDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const { toast } = useToast();
 
   const service = new EvolutionApiService();
 
+  // Verifica o status inicial
   useEffect(() => {
     checkInstance();
   }, []);
+
+  // Polling apenas durante o escaneamento do QR code
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (instanceState === "CONNECTING" && showQrInDialog) {
+      intervalId = setInterval(async () => {
+        const instance = await service.getInstance();
+        if (instance?.state === "CONNECTED") {
+          setInstanceState("CONNECTED");
+          setShowQrInDialog(false);
+          setShowNumberDialog(false);
+          toast({
+            title: "WhatsApp Conectado",
+            description: "Seu WhatsApp foi conectado com sucesso!",
+          });
+          clearInterval(intervalId);
+        }
+      }, 3000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [instanceState, showQrInDialog, service, toast]);
 
   async function checkInstance() {
     try {
       const instance = await service.getInstance();
       if (instance) {
         setInstanceState(instance.state);
-        setQrCode(instance.qrcode);
       }
     } catch (error) {
       console.error("Erro ao verificar instância:", error);

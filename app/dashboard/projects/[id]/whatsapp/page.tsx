@@ -23,6 +23,15 @@ import {
   DialogTitle,
 } from "@/app/_components/ui/dialog";
 import { WhatsAppConnection } from "@/app/_components/dashboard/whatsapp/WhatsAppConnection";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/_components/ui/select";
+import { Label } from "@/app/_components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/app/_components/ui/radio-group";
 
 interface MessageTemplate {
   introduction: string;
@@ -182,7 +191,6 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
       const { guestsCount, pendingGuestsCount } = await response.json();
       setGuestsCount(guestsCount);
       setPendingGuestsCount(pendingGuestsCount);
-      setTargetAudience("all");
       setShowConfirmDialog(true);
     } catch (error) {
       console.error("Erro ao buscar convidados:", error);
@@ -198,19 +206,22 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
     setIsSending(true);
 
     try {
-      const response = await fetch(`/api/projects/${params.id}/whatsapp/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          template: {
-            introduction: template.introduction,
-            conclusion: template.conclusion,
+      const response = await fetch(
+        `/api/projects/${params.id}/whatsapp/message`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          targetAudience,
-        }),
-      });
+          body: JSON.stringify({
+            template: {
+              introduction: template.introduction,
+              conclusion: template.conclusion,
+            },
+            targetAudience,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error("Erro ao enviar mensagens");
 
@@ -253,7 +264,6 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
       const { guestsCount, pendingGuestsCount } = await response.json();
       setGuestsCount(guestsCount);
       setPendingGuestsCount(pendingGuestsCount);
-      setTargetAudience("all");
       setShowSimpleMessageConfirmDialog(true);
     } catch (error) {
       console.error("Erro ao buscar convidados:", error);
@@ -270,16 +280,19 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
     setIsSimpleMessageSending(true);
 
     try {
-      const response = await fetch(`/api/projects/${params.id}/whatsapp/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          simpleMessage,
-          targetAudience,
-        }),
-      });
+      const response = await fetch(
+        `/api/projects/${params.id}/whatsapp/message`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            simpleMessage,
+            targetAudience,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error("Erro ao enviar mensagens");
 
@@ -289,6 +302,8 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
         title: "Envio concluído",
         description: `✅ ${summary.successful} enviadas\n❌ ${summary.failed} falhas\n⚠️ ${summary.skipped} sem telefone`,
       });
+
+      setSimpleMessage("");
     } catch (error) {
       console.error("Erro ao enviar mensagens:", error);
       toast({
@@ -428,13 +443,13 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
                   <label className="text-sm font-medium">
                     Mensagem
                     <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      (será enviada para todos os convidados)
+                      (será enviada para os convidados selecionados)
                     </span>
                   </label>
                   <Textarea
                     value={simpleMessage}
                     onChange={(e) => setSimpleMessage(e.target.value)}
-                    placeholder="Digite aqui a mensagem que será enviada para todos os convidados..."
+                    placeholder="Digite aqui a mensagem que será enviada para os convidados..."
                     className="min-h-[300px]"
                   />
                 </div>
@@ -472,6 +487,112 @@ export default function WhatsAppPage({ params }: WhatsAppPageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Diálogo de confirmação para mensagem de confirmação */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar envio</DialogTitle>
+            <DialogDescription className="space-y-4">
+              <div>Selecione o público-alvo para envio:</div>
+              <RadioGroup
+                value={targetAudience}
+                onValueChange={(value: "all" | "pending") =>
+                  setTargetAudience(value)
+                }
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="all" />
+                  <Label htmlFor="all">
+                    Todos os convidados ({guestsCount})
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pending" id="pending" />
+                  <Label htmlFor="pending">
+                    Apenas pendentes ({pendingGuestsCount})
+                  </Label>
+                </div>
+              </RadioGroup>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmSend} disabled={isSending}>
+              {isSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                "Confirmar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de confirmação para mensagem simples */}
+      <Dialog
+        open={showSimpleMessageConfirmDialog}
+        onOpenChange={setShowSimpleMessageConfirmDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar envio</DialogTitle>
+            <DialogDescription className="space-y-4">
+              <div>Selecione o público-alvo para envio:</div>
+              <RadioGroup
+                value={targetAudience}
+                onValueChange={(value: "all" | "pending") =>
+                  setTargetAudience(value)
+                }
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="all-simple" />
+                  <Label htmlFor="all-simple">
+                    Todos os convidados ({guestsCount})
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pending" id="pending-simple" />
+                  <Label htmlFor="pending-simple">
+                    Apenas pendentes ({pendingGuestsCount})
+                  </Label>
+                </div>
+              </RadioGroup>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSimpleMessageConfirmDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSimpleMessageConfirmSend}
+              disabled={isSimpleMessageSending}
+            >
+              {isSimpleMessageSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                "Confirmar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,17 +6,13 @@ interface SendMessageParams {
 }
 
 interface Instance {
-  state: "CONNECTED" | "DISCONNECTED" | "CONNECTING";
+  state: string;
   phoneNumber?: string;
   qrcode?: string;
 }
 
 interface InstanceConfig {
   number: string;
-  reject_call?: boolean;
-  msg_call?: string;
-  always_online?: boolean;
-  read_messages?: boolean;
 }
 
 export class EvolutionApiService {
@@ -80,35 +76,43 @@ export class EvolutionApiService {
 
   async getInstance(): Promise<Instance | null> {
     try {
-      console.log("[EvolutionApiService] Buscando instância...");
-
-      // Tenta conectar à instância primeiro
-      const connectResponse = await this.fetchApi(
-        `/instance/connect/${this.instanceName}`,
+      console.log("[EvolutionApiService] Verificando estado da conexão...");
+      const response = await this.fetchApi(
+        `/instance/connectionState/${this.instanceName}`,
         {
           method: "GET",
         }
       );
 
-      if (!connectResponse.ok) {
-        if (connectResponse.status === 404) {
+      if (!response.ok) {
+        if (response.status === 404) {
           console.log("[EvolutionApiService] Instância não encontrada");
           return null;
         }
-        const text = await connectResponse.text();
-        console.error("[EvolutionApiService] Erro ao buscar instância:", {
-          status: connectResponse.status,
+        const text = await response.text();
+        console.error("[EvolutionApiService] Erro ao verificar estado:", {
+          status: response.status,
           body: text,
         });
         return null;
       }
 
-      const instance = await connectResponse.json();
-      console.log("[EvolutionApiService] Status da instância:", instance);
+      const data = await response.json();
+      console.log("[EvolutionApiService] Estado da conexão (raw):", data);
+
+      // Mapeia o estado retornado pela API
+      let connectionState = "DISCONNECTED";
+      if (data.instance?.state === "open") {
+        connectionState = "CONNECTED";
+      } else if (data.instance?.state === "connecting") {
+        connectionState = "CONNECTING";
+      }
+
+      console.log("[EvolutionApiService] Estado mapeado:", connectionState);
 
       return {
-        state: instance.state || "DISCONNECTED",
-        qrcode: instance.qrcode,
+        state: connectionState,
+        qrcode: data.qrcode,
       };
     } catch (error) {
       console.error("[EvolutionApiService] getInstance error:", error);
@@ -191,7 +195,7 @@ export class EvolutionApiService {
         }
       }
 
-      // Cria uma nova instância com o formato correto
+      // Cria uma nova instância com configurações básicas
       console.log("[EvolutionApiService] Criando nova instância...");
       const createResponse = await this.fetchApi(`/instance/create`, {
         method: "POST",
@@ -202,16 +206,8 @@ export class EvolutionApiService {
           number: config.number,
           integration: "WHATSAPP-BAILEYS",
           webhook: "",
-          webhook_by_events: true,
-          events: ["APPLICATION_STARTUP"],
-          reject_call: true,
-          msg_call: "Desculpe, não posso atender chamadas no momento.",
-          groups_ignore: true,
-          always_online: true,
-          read_messages: true,
-          read_status: true,
-          websocket_enabled: true,
-          websocket_events: ["APPLICATION_STARTUP"],
+          webhook_by_events: false,
+          events: [],
         }),
       });
 
@@ -299,20 +295,65 @@ export class EvolutionApiService {
 
   async sendMessage(params: SendMessageParams): Promise<void> {
     try {
-      const response = await this.fetchApi(`/message/text`, {
-        method: "POST",
-        body: JSON.stringify({
-          number: params.phoneNumber,
-          textMessage: params.message,
-          instanceName: this.instanceName,
-        }),
+      // Formata o número do telefone
+      let phoneNumber = params.phoneNumber.replace(/\D/g, "");
+
+      // Garante que começa com 55 (Brasil)
+      if (!phoneNumber.startsWith("55")) {
+        phoneNumber = "55" + phoneNumber;
+      }
+
+      // Garante que tem 13 dígitos (55 + DDD + 9 + número)
+      if (phoneNumber.length === 12) {
+        // Adiciona o 9 para celular
+        phoneNumber = phoneNumber.slice(0, 4) + "9" + phoneNumber.slice(4);
+      }
+
+      console.log("[EvolutionApiService] Enviando mensagem:", {
+        phoneNumberOriginal: params.phoneNumber,
+        phoneNumberFormatado: phoneNumber,
+        messageLength: params.message.length,
+        instanceName: this.instanceName,
+      });
+
+      const response = await this.fetchApi(
+        `/message/sendText/${this.instanceName}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            number: phoneNumber,
+            text: params.message, // Corrigido: text deve estar no nível raiz do objeto
+          }),
+        }
+      );
+
+      const responseData = await response.text();
+      console.log("[EvolutionApiService] Resposta do envio:", {
+        status: response.status,
+        data: responseData,
+        headers: Object.fromEntries(response.headers.entries()),
       });
 
       if (!response.ok) {
-        throw new Error(`Erro ao enviar mensagem: ${response.statusText}`);
+        throw new Error(`Erro ao enviar mensagem: ${responseData}`);
+      }
+
+      // Tenta parsear a resposta como JSON para log
+      try {
+        const jsonResponse = JSON.parse(responseData);
+        console.log("[EvolutionApiService] Resposta parseada:", jsonResponse);
+      } catch (e) {
+        console.log("[EvolutionApiService] Resposta não é JSON válido");
       }
     } catch (error) {
-      console.error("[EvolutionApiService] Erro ao enviar mensagem:", error);
+      console.error(
+        "[EvolutionApiService] Erro detalhado ao enviar mensagem:",
+        {
+          error,
+          params,
+          stack: error instanceof Error ? error.stack : undefined,
+        }
+      );
       throw error;
     }
   }
