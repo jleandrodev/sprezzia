@@ -16,6 +16,7 @@ export interface Guest {
   companions: Companion[];
   children_0_6: number;
   children_7_10: number;
+  observations?: string;
 }
 
 // Cache para armazenar os dados dos convidados por projeto

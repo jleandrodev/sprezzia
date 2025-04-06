@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function GET(
   request: Request,
@@ -55,18 +56,21 @@ export async function POST(
     }
 
     // Criar o convidado com todos os campos
-    const guest = await prisma.guest.create({
-      data: {
-        name: body.name,
-        phone: body.phone || null,
-        status: body.status,
-        children_0_6: body.children_0_6 || 0,
-        children_7_10: body.children_7_10 || 0,
-        projectId: params.id,
-        companions: {
-          create: body.companions || [],
-        },
+    const guestData: Prisma.GuestUncheckedCreateInput = {
+      name: body.name,
+      phone: body.phone || null,
+      status: body.status,
+      children_0_6: body.children_0_6 || 0,
+      children_7_10: body.children_7_10 || 0,
+      observations: body.observations || null,
+      projectId: params.id,
+      companions: {
+        create: body.companions || [],
       },
+    };
+
+    const guest = await prisma.guest.create({
+      data: guestData,
       include: {
         companions: true,
       },
@@ -110,20 +114,23 @@ export async function PUT(
     });
 
     // Atualizar o convidado e criar novos acompanhantes
+    const updateData: Prisma.GuestUncheckedUpdateInput = {
+      name: body.name,
+      phone: body.phone || null,
+      status: body.status,
+      children_0_6: body.children_0_6 || 0,
+      children_7_10: body.children_7_10 || 0,
+      observations: body.observations || null,
+      companions: {
+        create: body.companions || [],
+      },
+    };
+
     const updatedGuest = await prisma.guest.update({
       where: {
         id: guestId,
       },
-      data: {
-        name: body.name,
-        phone: body.phone || null,
-        status: body.status,
-        children_0_6: body.children_0_6 || 0,
-        children_7_10: body.children_7_10 || 0,
-        companions: {
-          create: body.companions || [],
-        },
-      },
+      data: updateData,
       include: {
         companions: true,
       },

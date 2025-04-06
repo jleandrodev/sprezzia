@@ -32,6 +32,9 @@ import { Edit, Plus, Trash } from "lucide-react";
 import { useToast } from "@/app/_hooks/use-toast";
 import { useGuests } from "@/app/_hooks/use-guests";
 import type { Guest, Companion } from "@/app/_hooks/use-guests";
+import { Textarea } from "@/app/_components/ui/textarea";
+import { DialogFooter } from "@/app/_components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -49,8 +52,9 @@ const formSchema = z.object({
       })
     )
     .default([]),
-  children_0_6: z.number().min(0).default(0),
-  children_7_10: z.number().min(0).default(0),
+  children_0_6: z.coerce.number().min(0),
+  children_7_10: z.coerce.number().min(0),
+  observations: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -80,6 +84,7 @@ export default function EditGuestDialog({
       companions: guest.companions,
       children_0_6: guest.children_0_6,
       children_7_10: guest.children_7_10,
+      observations: guest.observations || "",
     },
   });
 
@@ -102,7 +107,7 @@ export default function EditGuestDialog({
 
       // Atualiza a lista em todos os componentes que usam o hook useGuests
       await refreshGuests();
-      
+
       // Chama o callback onSuccess se existir (para compatibilidade)
       onSuccess?.();
 
@@ -154,18 +159,22 @@ export default function EditGuestDialog({
         companions: guest.companions,
         children_0_6: guest.children_0_6,
         children_7_10: guest.children_7_10,
+        observations: guest.observations || "",
       });
     }
   }, [open, guest, form]);
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        setStep(1);
-        form.reset();
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen) {
+          setStep(1);
+          form.reset();
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Edit className="h-4 w-4" />
@@ -399,6 +408,25 @@ export default function EditGuestDialog({
                           onChange={(e) =>
                             field.onChange(parseInt(e.target.value) || 0)
                           }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="observations"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Observações sobre o convidado"
+                          className="resize-none"
+                          {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
