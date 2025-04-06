@@ -14,6 +14,12 @@ interface Project {
   updatedAt: Date;
   userId: string;
   workspaceId: string;
+  guestListSettings?: {
+    showPhone: boolean;
+    showStatus: boolean;
+    showCompanions: boolean;
+    showMessageStatus: boolean;
+  } | null;
 }
 
 interface DocumentData {
@@ -56,28 +62,32 @@ export class ProjectService {
       },
     });
 
-    return projects.map((project) => ({
-      ...project,
-      budget: project.budget ? Number(project.budget) : null,
-      formattedBudget: project.budget
-        ? formatCurrency(Number(project.budget))
-        : "R$ 0,00",
-    }));
+    return projects.map((project) => {
+      const { budget, ...rest } = project;
+      return {
+        ...rest,
+        budget: budget ? Number(budget) : null,
+        formattedBudget: budget ? formatCurrency(Number(budget)) : "R$ 0,00",
+        guestListSettings: null,
+      };
+    });
   }
 
   static async findById(id: string) {
     const project = await prisma.project.findUnique({
       where: { id },
+      include: {
+        guestListSettings: true,
+      },
     });
 
     if (!project) return null;
 
+    const { budget, ...rest } = project;
     return {
-      ...project,
-      budget: project.budget ? Number(project.budget) : null,
-      formattedBudget: project.budget
-        ? formatCurrency(Number(project.budget))
-        : "R$ 0,00",
+      ...rest,
+      budget: budget ? Number(budget) : null,
+      formattedBudget: budget ? formatCurrency(Number(budget)) : "R$ 0,00",
     };
   }
 
@@ -91,11 +101,22 @@ export class ProjectService {
       type?: string;
       budget?: number;
       image?: string | null;
+      guestListSettings?: {
+        create: {
+          showPhone: boolean;
+          showStatus: boolean;
+          showCompanions: boolean;
+          showMessageStatus: boolean;
+        };
+      };
     }
   ) {
     return prisma.project.update({
       where: { id },
       data,
+      include: {
+        guestListSettings: true,
+      },
     });
   }
 
@@ -131,7 +152,7 @@ export class ProjectService {
   static async getDocuments(projectId: string) {
     return prisma.document.findMany({
       where: { projectId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,
