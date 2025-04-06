@@ -31,6 +31,7 @@ import {
 import { Plus, Trash } from "lucide-react";
 import { useToast } from "@/app/_hooks/use-toast";
 import { useGuests } from "@/app/_hooks/use-guests";
+import { Textarea } from "@/app/_components/ui/textarea";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -50,6 +51,7 @@ const formSchema = z.object({
     .default([]),
   children_0_6: z.number().min(0).default(0),
   children_7_10: z.number().min(0).default(0),
+  observations: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -61,6 +63,7 @@ const defaultValues: Partial<FormValues> = {
   companions: [],
   children_0_6: 0,
   children_7_10: 0,
+  observations: "",
 };
 
 interface AddGuestDialogProps {
@@ -105,7 +108,7 @@ export default function AddGuestDialog({
       });
 
       await refreshGuests();
-      
+
       onSuccess?.();
 
       setOpen(false);
@@ -143,13 +146,16 @@ export default function AddGuestDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        form.reset();
-        setStep(1);
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen) {
+          form.reset();
+          setStep(1);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -183,7 +189,6 @@ export default function AddGuestDialog({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="phone"
@@ -191,49 +196,26 @@ export default function AddGuestDialog({
                     <FormItem>
                       <FormLabel>Telefone</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, "");
-                            const formatted = value
-                              .replace(/^(\d{2})/, "($1) ")
-                              .replace(/(\d{5})(\d)/, "$1-$2")
-                              .substr(0, 15);
-                            field.onChange(formatted);
-                          }}
-                        />
+                        <Input placeholder="Telefone do convidado" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="observations"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="PENDENTE">Pendente</SelectItem>
-                          <SelectItem value="CONFIRMADO_PRESENCA">
-                            Confirmado Presença
-                          </SelectItem>
-                          <SelectItem value="CONFIRMADO_AUSENCIA">
-                            Confirmado Ausência
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Observações sobre o convidado"
+                          className="resize-none"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
