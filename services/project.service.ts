@@ -76,6 +76,9 @@ export class ProjectService {
   static async findById(id: string) {
     const project = await prisma.project.findUnique({
       where: { id },
+      include: {
+        guestListSettings: true,
+      },
     });
 
     if (!project) return null;
@@ -85,7 +88,6 @@ export class ProjectService {
       ...rest,
       budget: budget ? Number(budget) : null,
       formattedBudget: budget ? formatCurrency(Number(budget)) : "R$ 0,00",
-      guestListSettings: null,
     };
   }
 

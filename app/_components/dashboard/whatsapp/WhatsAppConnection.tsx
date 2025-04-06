@@ -4,7 +4,7 @@ import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent } from "@/app/_components/ui/card";
 import { useToast } from "@/app/_hooks/use-toast";
 import { EvolutionApiService } from "@/app/services/evolution-api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { MessageSquare } from "lucide-react";
 import {
@@ -29,12 +29,28 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const { toast } = useToast();
 
-  const service = new EvolutionApiService();
+  const service = useMemo(() => new EvolutionApiService(), []);
+
+  const checkInstance = useCallback(async () => {
+    try {
+      const instance = await service.getInstance();
+      if (instance) {
+        setInstanceState(instance.state);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar instância:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao verificar conexão",
+        description: "Não foi possível verificar o estado da conexão",
+      });
+    }
+  }, [service, toast]);
 
   // Verifica o status inicial
   useEffect(() => {
     checkInstance();
-  }, []);
+  }, [checkInstance]);
 
   // Polling apenas durante o escaneamento do QR code
   useEffect(() => {
@@ -62,22 +78,6 @@ export function WhatsAppConnection({ projectId }: WhatsAppConnectionProps) {
       }
     };
   }, [instanceState, showQrInDialog, service, toast]);
-
-  async function checkInstance() {
-    try {
-      const instance = await service.getInstance();
-      if (instance) {
-        setInstanceState(instance.state);
-      }
-    } catch (error) {
-      console.error("Erro ao verificar instância:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao verificar conexão",
-        description: "Não foi possível verificar o estado da conexão",
-      });
-    }
-  }
 
   async function handleNumberSubmit() {
     if (!phoneNumber.match(/^\d+$/)) {
