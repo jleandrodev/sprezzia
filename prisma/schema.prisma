@@ -54,7 +54,7 @@ model Guest {
   children_0_6  Int        @default(0)
   children_7_10 Int        @default(0)
   projectId     String
-  project       Project     @relation(fields: [projectId], references: [id])
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   companions    Companion[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
