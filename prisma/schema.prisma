@@ -54,7 +54,7 @@ model Guest {
   children_0_6  Int        @default(0)
   children_7_10 Int        @default(0)
   projectId     String
-  project       Project     @relation(fields: [projectId], references: [id])
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   companions    Companion[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -94,7 +94,7 @@ model Document {
 model WhatsAppConfig {
   id          String   @id @default(uuid())
   projectId   String   @unique
-  project     Project  @relation(fields: [projectId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   introduction String  @db.Text
   conclusion   String  @db.Text
   createdAt   DateTime @default(now())

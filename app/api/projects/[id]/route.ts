@@ -63,3 +63,25 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    await ProjectService.delete(params.id);
+
+    return NextResponse.json({ message: "Projeto excluído com sucesso" });
+  } catch (error) {
+    console.error("[PROJECT_DELETE]", error);
+    return NextResponse.json(
+      { error: "Erro ao excluir projeto" },
+      { status: 500 }
+    );
+  }
+}

@@ -46,7 +46,7 @@ export default async function ProjectDetailsPage({
         <Link href={`/dashboard/projects/${params.id}/settings`}>
           <Button variant="outline" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Configurações do Evento
+            Configurações do Projeto
           </Button>
         </Link>
       </div>
