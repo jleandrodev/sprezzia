@@ -13,6 +13,10 @@ interface Instance {
 
 interface InstanceConfig {
   number: string;
+  reject_call?: boolean;
+  msg_call?: string;
+  always_online?: boolean;
+  read_messages?: boolean;
 }
 
 export class EvolutionApiService {
